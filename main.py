@@ -161,16 +161,10 @@ while True:
         received_data = data.decode('utf-8')
         time.sleep(1)
         twitch_ping_pong(received_data)
-        new_donation_string = 'A new donation has come through! {} raised by {} donators!'.format(new_donation_amount, amount_of_donators)
-        time_string = 'Selezen has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(hours_passed, percentage_done, hours_left)
-        donate_string = 'Visit {} to donate!'.format(URL)
+        new_donation_string = 'A new donation has come through! {} has been raised by {} donators! Visit {} to donate to the Marie Curie foundation!'.format(new_donation_amount, amount_of_donators, URL)
         print('Attempting to post the data...')
         try:
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(new_donation_string), 'utf-8'))
-            time.sleep(2)
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
-            time.sleep(2)
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(donate_string), 'utf-8'))
             time.sleep(2)
             print('Post success!')
         except Exception as e:
