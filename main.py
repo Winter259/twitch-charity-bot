@@ -160,7 +160,7 @@ while True:
         received_data = data.decode('utf-8')
         time.sleep(1)
         twitch_ping_pong(received_data)
-        new_donation_string = 'A new donation has come through! {} has been raised by {} donators! Visit {} to donate to the Marie Curie foundation!'.format(new_donation_amount, amount_of_donators, URL)
+        new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
         print('Attempting to post the data...')
         try:
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(new_donation_string), 'utf-8'))
