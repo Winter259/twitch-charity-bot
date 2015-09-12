@@ -74,7 +74,7 @@ def display_live_info(wait_time, spans):
         donation_amount = get_donation_amount(spans)
         amount_of_donators = get_number_of_donations(spans)
         hours_passed = get_stream_time_elapsed()
-        percentage_done = round((hours_passed / 24) * 100, 2)
+        percentage_done = round((hours_passed / 24) * 100, 1)
         print('{}/{} hours, {}%, {} raised by {}, Next tick: {}'.format(hours_passed, 24, percentage_done, donation_amount, amount_of_donators, ticks), end='\r')
         ticks -= 1
         time.sleep(1)
