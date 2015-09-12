@@ -19,9 +19,9 @@ PROMPT_TICK_TIME = 15 * 60
 TICK_TIME = 10  # time in seconds between when the bot checks for new donations
 
 def scrape_data():
-    print('Scraping data...')
+    # print('Scraping data...')
     data = urlopen(URL).read()
-    print('Souping data...')
+    # print('Souping data...')
     soup = BS(data, 'lxml')
     spans = soup.findAll('span')
     return spans
@@ -70,16 +70,19 @@ def pause(prompt='', amount=5):
 
 def display_live_info(wait_time, spans):
     ticks = wait_time
-    print('Live stats:')
+    donation_amount = get_donation_amount(spans)
+    amount_of_donators = get_number_of_donations(spans)
+    hours_passed = get_stream_time_elapsed()
+    percentage_done = round((hours_passed / 24) * 100, 1)
+    print('Current stats:')
+    print('\t{}/24 hours elapsed'.format(hours_passed))
+    print('\t{}% complete'.format(percentage_done))
+    print('\t{} raised by {} donators'.format(donation_amount, amount_of_donators))
     while ticks >= 0:
-        donation_amount = get_donation_amount(spans)
-        amount_of_donators = get_number_of_donations(spans)
-        hours_passed = get_stream_time_elapsed()
-        percentage_done = round((hours_passed / 24) * 100, 1)
-        print('{}/{} hours, {}%, {} raised by {}, Next tick: {}   '.format(hours_passed, 24, percentage_done, donation_amount, amount_of_donators, ticks), end='\r')
+        print('Next tick: {}   '.format(ticks), end='\r')
         ticks -= 1
         time.sleep(1)
-    print('Cycle finished, starting new cycle')
+    print('\nCycle finished, starting new cycle')
 
 
 def connect_to_twitch():
@@ -104,15 +107,18 @@ def twitch_ping_pong(decoded_data):
         irc.send(pong_string)
         pause('Waiting for after the PONG', 5)
 
-print('Starting bot!')
+print('--- Starting bot! ---')
 connected = False
+cycle = 0
 current_prompt_tick = 0
 spans = scrape_data()
 current_donation_amount = get_donation_amount(spans)
 print('Starting donation amount is: {}'.format(current_donation_amount))
 while True:
+    print('\nCurrent cycle: {}'.format(cycle))
+    cycle += 1
     if current_prompt_tick > PROMPT_TICK_TIME:
-        print('Starting prompt cycle...')
+        print('Starting time prompt cycle...')
         irc = connect_to_twitch()
         data = irc.recv(4096) # get output
         received_data = data.decode('utf-8')
@@ -146,6 +152,7 @@ while True:
     new_donation_amount = get_donation_amount(spans)
     print('Current donation amount is: {}'.format(new_donation_amount))
     if not new_donation_amount == current_donation_amount:  # if it is not the same, then it has increased
+        print('Starting donation prompt cycle...')
         current_donation_amount = new_donation_amount
         print('There has been a new donation! Calculating data for update...')
         amount_of_donators = get_number_of_donations(spans)
@@ -175,6 +182,7 @@ while True:
         irc.close()
     else:
         print('No new donation, starting wait cycle')
-        display_live_info(TICK_TIME, spans)
+        display_live_info(TICK_TIME - 1, spans)
         current_prompt_tick += TICK_TIME
-        print('Prompt tick: {} cycles away'.format(round(PROMPT_TICK_TIME - current_prompt_tick, 0)))
+        print('Prompt tick: {} cycles away'.format(round((PROMPT_TICK_TIME - current_prompt_tick) / TICK_TIME, 0)))
+
