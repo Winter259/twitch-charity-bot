@@ -128,7 +128,7 @@ while True:
         percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
         time_string = 'Selezen has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(hours_passed, percentage_done, hours_left)
-        donate_string = 'Visit {} to donate!'.format(URL)
+        donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
         print('Attempting to post the data...')
         try:
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
