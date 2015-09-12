@@ -15,7 +15,7 @@ CHAN = "#test"                      # the channel you want to join
 """
 
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
-TICK_TIME = 20 * 60  # time in seconds between when the bot posts info
+TICK_TIME = 30 * 60  # time in seconds between when the bot posts info
 
 def scrape_data():
     print('Scraping data...')
@@ -99,14 +99,15 @@ while True:
         amount_of_donators = get_number_of_donations(spans)
         hours_passed = get_stream_time_elapsed()
         hours_left = get_stream_time_left(hours_passed)
-        time_string = 'Selezen has been going for {} hours out of 24. He has {} hours left to go!'.format(hours_passed, hours_left)
+        percentage_done = round((hours_passed / 24) * 100, 2)
+        time_string = 'Selezen has been going for {} hours out of 24. He has completed {} percent and has {} hours left to go!'.format(hours_passed, percentage_done, hours_left)
         post_string = '{} has been raised from {} donators!'.format(donation_amount, amount_of_donators)
         donate_string = 'Visit {} to donate!'.format(URL)
         try:
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
-            time.sleep(1)
+            time.sleep(2)
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(post_string), 'utf-8'))
-            time.sleep(1)
+            time.sleep(2)
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(donate_string), 'utf-8'))
             print('Post success!')
         except Exception as e:
