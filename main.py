@@ -15,7 +15,7 @@ CHAN = "#test"                      # the channel you want to join
 """
 
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
-TICK_TIME = 30 * 60  # time in seconds between when the bot posts info
+TICK_TIME = 20 * 60  # time in seconds between when the bot posts info
 
 def scrape_data():
     print('Scraping data...')
@@ -28,13 +28,13 @@ def scrape_data():
 
 def get_donation_amount(spans):
     current_amount = spans[12].text  # manually setting these numbers is convenient but dirty, need to find a better way
-    print('\tDonated amount: {}'.format(current_amount))
+    # print('\tDonated amount: {}'.format(current_amount))
     return current_amount
 
 
 def get_number_of_donations(spans):
     amount_of_donations = spans[13].text
-    print('\tAmount of donations: {}'.format(amount_of_donations))
+    # print('\tAmount of donations: {}'.format(amount_of_donations))
     return amount_of_donations
 
 
@@ -47,13 +47,13 @@ def get_stream_time_elapsed():
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
     epoch_passed = epoch - epoch_old
     hours_passed = round(((epoch_passed / 60) / 60), 2)
-    print('\tHours passed: {}'.format(hours_passed))
+    # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
 
 
 def get_stream_time_left(time_passed):
     time_left = round(24 - (time_passed), 2)
-    print('Time left: {}'.format(time_left))
+    # print('Time left: {}'.format(time_left))
     return time_left
 
 
@@ -66,6 +66,19 @@ def pause(prompt='', amount=5):
         ticks -= 1
     print('Pause ended, continuing now!')
 
+
+def display_live_info(wait_time, spans):
+    ticks = wait_time
+    print('Live stats:')
+    while ticks > 0:
+        donation_amount = get_donation_amount(spans)
+        amount_of_donators = get_number_of_donations(spans)
+        hours_passed = get_stream_time_elapsed()
+        percentage_done = round((hours_passed / 24) * 100, 2)
+        print('{}/{} hours, {}%, {} raised by {}, Next tick: {}'.format(hours_passed, 24, percentage_done, donation_amount, amount_of_donators, ticks), end='\r')
+        ticks -= 1
+        time.sleep(1)
+    print('Cycle finished, starting new cycle')
 
 print('Starting bot!')
 connected = False
@@ -94,15 +107,16 @@ while True:
             pong_string = bytes(received_data.replace('PING', 'PONG'), 'utf-8')
             irc.send(pong_string)
             pause('Waiting for after the PONG', 5)
-        print('Attempting to post the following info:')
+        print('Calculating data...')
         donation_amount = get_donation_amount(spans)
         amount_of_donators = get_number_of_donations(spans)
         hours_passed = get_stream_time_elapsed()
         hours_left = get_stream_time_left(hours_passed)
         percentage_done = round((hours_passed / 24) * 100, 2)
-        time_string = 'Selezen has been going for {} hours out of 24. He has completed {} percent and has {} hours left to go!'.format(hours_passed, percentage_done, hours_left)
+        time_string = 'Selezen has been going for {} hours out of 24. He has completed {} percent of the stream and has {} hours left to go!'.format(hours_passed, percentage_done, hours_left)
         post_string = '{} has been raised from {} donators!'.format(donation_amount, amount_of_donators)
         donate_string = 'Visit {} to donate!'.format(URL)
+        print('Attempting to post the data...')
         try:
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
             time.sleep(2)
@@ -115,6 +129,7 @@ while True:
             print('Closing the connection...')
             irc.close()
             exit(0)
+        print('Closing the connection...')
         irc.close()
         connected = False
-        pause('Data posted to chat, closing the connection until the next tick.', TICK_TIME)
+        display_live_info(TICK_TIME, spans)
