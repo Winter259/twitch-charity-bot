@@ -16,7 +16,7 @@ CHAN = "#test"                      # the channel you want to join
 
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
 PROMPT_TICK_TIME = 15 * 60
-TICK_TIME = 10  # time in seconds between when the bot checks for new donations
+TICK_TIME = 15  # time in seconds between when the bot checks for new donations
 
 def scrape_data():
     # print('Scraping data...')
@@ -107,17 +107,16 @@ def twitch_ping_pong(decoded_data):
         irc.send(pong_string)
         pause('Waiting for after the PONG', 5)
 
-print('--- Starting bot! ---')
+print('--- Starting bot! ---\n')
 connected = False
 cycle = 0
 current_prompt_tick = 0
 spans = scrape_data()
 current_donation_amount = get_donation_amount(spans)
-print('Starting donation amount is: {}'.format(current_donation_amount))
+print('Starting donation amount is: {}\n'.format(current_donation_amount))
 while True:
-    print('\nCurrent cycle: {}'.format(cycle))
-    cycle += 1
-    if current_prompt_tick > PROMPT_TICK_TIME:
+    print('\n--- Starting cycle: {} ---'.format(cycle))
+    if current_prompt_tick >= PROMPT_TICK_TIME:
         print('Starting time prompt cycle...')
         irc = connect_to_twitch()
         data = irc.recv(4096) # get output
@@ -175,8 +174,9 @@ while True:
         print('Closing the connection...')
         irc.close()
     else:
-        print('No new donation, starting wait cycle')
+        print('No new donation, starting wait tick')
         display_live_info(TICK_TIME - 1, spans)
         current_prompt_tick += TICK_TIME
         print('Prompt tick: {} cycles away'.format(round((PROMPT_TICK_TIME - current_prompt_tick) / TICK_TIME, 0)))
-
+    print('--- Finished cycle: {} ---'.format(cycle))
+    cycle += 1
