@@ -15,7 +15,7 @@ CHAN = "#test"                      # the channel you want to join
 """
 
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
-TICK_TIME = 30  # time in seconds between when the bot checks for new donations
+TICK_TIME = 10  # time in seconds between when the bot checks for new donations
 
 def scrape_data():
     print('Scraping data...')
@@ -46,13 +46,13 @@ def get_stream_time_elapsed():
     epoch_old = time.mktime(t_old.timetuple())
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
     epoch_passed = epoch - epoch_old
-    hours_passed = round(((epoch_passed / 60) / 60), 2)
+    hours_passed = round(((epoch_passed / 60) / 60), 1)
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
 
 
 def get_stream_time_left(time_passed):
-    time_left = round(24 - (time_passed), 2)
+    time_left = round(24 - (time_passed), 1)
     # print('Time left: {}'.format(time_left))
     return time_left
 
@@ -139,4 +139,5 @@ while True:
             irc.close()
             connected = False
     else:
+        print('No new donation, starting wait cycle')
         display_live_info(TICK_TIME, spans)
