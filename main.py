@@ -1,9 +1,10 @@
-import cfg
-from urllib.request import urlopen
-from bs4 import BeautifulSoup as BS
 import socket
 import time
 import datetime
+from urllib.request import urlopen
+from bs4 import BeautifulSoup as BS
+from winsound import Beep
+from cfg import *
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
@@ -12,15 +13,16 @@ PORT = 6667                         # always use port 6667!
 NICK = "purrbot359"                 # your Twitch username, lowercase
 PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from here: http://www.twitchapps.com/tmi/
 CHAN = "#test"                      # the channel you want to join
+STREAMER_NAME = 'selezen'  # name of the streamer doing the charity stream.
+URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
+PROMPT_TICK_TIME = 10 * 60  # interval in seconds between when the bot will post prompts
+TICK_TIME = 10  # time in seconds between when the bot checks for new donations
 """
 
-URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
-TICK_TIME = 20 * 60  # time in seconds between when the bot posts info
-
 def scrape_data():
-    print('Scraping data...')
+    # print('Scraping data...')
     data = urlopen(URL).read()
-    print('Souping data!')
+    # print('Souping data...')
     soup = BS(data, 'lxml')
     spans = soup.findAll('span')
     return spans
@@ -46,13 +48,13 @@ def get_stream_time_elapsed():
     epoch_old = time.mktime(t_old.timetuple())
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
     epoch_passed = epoch - epoch_old
-    hours_passed = round(((epoch_passed / 60) / 60), 2)
+    hours_passed = round(((epoch_passed / 60) / 60), 1)
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
 
 
 def get_stream_time_left(time_passed):
-    time_left = round(24 - (time_passed), 2)
+    time_left = round(24 - (time_passed), 1)
     # print('Time left: {}'.format(time_left))
     return time_left
 
@@ -69,60 +71,81 @@ def pause(prompt='', amount=5):
 
 def display_live_info(wait_time, spans):
     ticks = wait_time
-    print('Live stats:')
-    while ticks > 0:
-        donation_amount = get_donation_amount(spans)
-        amount_of_donators = get_number_of_donations(spans)
-        hours_passed = get_stream_time_elapsed()
-        percentage_done = round((hours_passed / 24) * 100, 1)
-        print('{}/{} hours, {}%, {} raised by {}, Next tick: {}'.format(hours_passed, 24, percentage_done, donation_amount, amount_of_donators, ticks), end='\r')
+    donation_amount = get_donation_amount(spans)
+    amount_of_donators = get_number_of_donations(spans)
+    hours_passed = get_stream_time_elapsed()
+    percentage_done = round((hours_passed / 24) * 100, 1)
+    print('Current stats:')
+    print('\t{}/24 hours elapsed'.format(hours_passed))
+    print('\t{}% complete'.format(percentage_done))
+    print('\t{} raised by {} donators'.format(donation_amount, amount_of_donators))
+    while ticks >= 0:
+        print('Next tick: {}   '.format(ticks), end='\r')
         ticks -= 1
         time.sleep(1)
-    print('Cycle finished, starting new cycle')
+    print('\nCycle finished, starting new cycle')
 
-print('Starting bot!')
-connected = False
-while True:
+
+def connect_to_twitch():
     irc = socket.socket()
     try:
-        irc = socket.socket()
-        irc.connect((cfg.HOST, cfg.PORT))
-        irc.send("PASS {}\r\n".format(cfg.PASS).encode("utf-8"))
-        irc.send("NICK {}\r\n".format(cfg.NICK).encode("utf-8"))
-        irc.send("JOIN {}\r\n".format(cfg.CHAN).encode("utf-8"))
-        connected = True
+        irc.connect((HOST, PORT))
+        irc.send("PASS {}\r\n".format(PASS).encode("utf-8"))
+        irc.send("NICK {}\r\n".format(NICK).encode("utf-8"))
+        irc.send("JOIN {}\r\n".format(CHAN).encode("utf-8"))
         print('Bot connected to twitch!')
+        return irc
     except Exception as e:
         print(str(e))
-        connected = False
         print('Bot did not manage to connect!')
         exit(0)
-    if connected:
-        spans = scrape_data()
+
+
+def twitch_ping_pong(decoded_data):
+    if decoded_data.find('PING') != -1:
+        print('Bot responding to the irc ping with a pong!')
+        pong_string = bytes(decoded_data.replace('PING', 'PONG'), 'utf-8')
+        irc.send(pong_string)
+        pause('Waiting for after the PONG', 5)
+
+
+def beep_speaker(ping_amount=2, delay=1.0):
+    for tick in range(0, ping_amount):
+        Beep(500, 500)
+        time.sleep(delay)
+
+
+print('--- Starting bot! ---\n')
+connected = False
+cycle = 0
+current_prompt_tick = 0
+spans = scrape_data()
+current_donation_amount = get_donation_amount(spans)
+print('Starting donation amount is: {}'.format(current_donation_amount))
+while True:
+    print('\n--- Starting cycle: {} ---'.format(cycle))
+    if current_prompt_tick >= PROMPT_TICK_TIME:
+        print('Starting time prompt cycle...')
+        irc = connect_to_twitch()
         data = irc.recv(4096) # get output
         received_data = data.decode('utf-8')
         time.sleep(1)
-        if received_data.find('PING') != -1:
-            print('Bot responding to the irc ping with a pong!')
-            pong_string = bytes(received_data.replace('PING', 'PONG'), 'utf-8')
-            irc.send(pong_string)
-            pause('Waiting for after the PONG', 5)
-        print('Calculating data...')
-        donation_amount = get_donation_amount(spans)
-        amount_of_donators = get_number_of_donations(spans)
+        twitch_ping_pong(received_data)
+        print('Calculating data')
         hours_passed = get_stream_time_elapsed()
+        percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
-        percentage_done = round((hours_passed / 24) * 100, 2)
-        time_string = 'Selezen has been going for {} hours out of 24. He has completed {} percent of the stream and has {} hours left to go!'.format(hours_passed, percentage_done, hours_left)
-        post_string = '{} has been raised from {} donators!'.format(donation_amount, amount_of_donators)
-        donate_string = 'Visit {} to donate!'.format(URL)
+        beep_speaker(2, 0.05) # beep 2 times for prompt
+        time_string = '{} has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(STREAMER_NAME, hours_passed, percentage_done, hours_left)
+        donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
         print('Attempting to post the data...')
         try:
+            print('Posting time data...')
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
             time.sleep(2)
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(post_string), 'utf-8'))
-            time.sleep(2)
+            print('Posting donation data...')
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(donate_string), 'utf-8'))
+            time.sleep(2)
             print('Post success!')
         except Exception as e:
             print(str(e))
@@ -131,5 +154,43 @@ while True:
             exit(0)
         print('Closing the connection...')
         irc.close()
-        connected = False
-        display_live_info(TICK_TIME, spans)
+        pause('Waiting for connection to close properly...', 5)
+        print('Finished prompt cycle')
+        current_prompt_tick = 0
+    spans = scrape_data()
+    print('Old donation amount was: {}'.format(current_donation_amount))
+    new_donation_amount = get_donation_amount(spans)
+    print('Current donation amount is: {}'.format(new_donation_amount))
+    if not new_donation_amount == current_donation_amount:  # if it is not the same, then it has increased
+        print('Starting donation prompt cycle...')
+        current_donation_amount = new_donation_amount
+        print('There has been a new donation! Calculating data for update...')
+        amount_of_donators = get_number_of_donations(spans)
+        irc = connect_to_twitch()
+        data = irc.recv(4096) # get output
+        received_data = data.decode('utf-8')
+        time.sleep(1)
+        twitch_ping_pong(received_data)
+        beep_speaker(4, 0.25) # beep 4 times for donation
+        new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
+        print('Attempting to post the data...')
+        try:
+            print('Posting new donation data...')
+            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(new_donation_string), 'utf-8'))
+            time.sleep(2)
+            print('Post success!')
+        except Exception as e:
+            print(str(e))
+            print('Closing the connection...')
+            irc.close()
+            exit(0)
+        print('Closing the connection...')
+        irc.close()
+    else:
+        print('No new donation, starting wait tick')
+        display_live_info(TICK_TIME - 1, spans)
+        current_prompt_tick += TICK_TIME
+        time_left_to_prompt = (PROMPT_TICK_TIME - current_prompt_tick) / 60
+        print('Next prompt in: {} minutes'.format(round(time_left_to_prompt, 1)))
+    print('--- Finished cycle: {} ---'.format(cycle))
+    cycle += 1
