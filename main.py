@@ -1,10 +1,10 @@
-import cfg
-from urllib.request import urlopen
-from bs4 import BeautifulSoup as BS
 import socket
 import time
 import datetime
+from urllib.request import urlopen
+from bs4 import BeautifulSoup as BS
 from winsound import Beep
+from cfg import *
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
@@ -13,12 +13,11 @@ PORT = 6667                         # always use port 6667!
 NICK = "purrbot359"                 # your Twitch username, lowercase
 PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from here: http://www.twitchapps.com/tmi/
 CHAN = "#test"                      # the channel you want to join
-"""
-
 STREAMER_NAME = 'selezen'  # name of the streamer doing the charity stream.
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
 PROMPT_TICK_TIME = 10 * 60  # interval in seconds between when the bot will post prompts
 TICK_TIME = 10  # time in seconds between when the bot checks for new donations
+"""
 
 def scrape_data():
     # print('Scraping data...')
@@ -90,10 +89,10 @@ def display_live_info(wait_time, spans):
 def connect_to_twitch():
     irc = socket.socket()
     try:
-        irc.connect((cfg.HOST, cfg.PORT))
-        irc.send("PASS {}\r\n".format(cfg.PASS).encode("utf-8"))
-        irc.send("NICK {}\r\n".format(cfg.NICK).encode("utf-8"))
-        irc.send("JOIN {}\r\n".format(cfg.CHAN).encode("utf-8"))
+        irc.connect((HOST, PORT))
+        irc.send("PASS {}\r\n".format(PASS).encode("utf-8"))
+        irc.send("NICK {}\r\n".format(NICK).encode("utf-8"))
+        irc.send("JOIN {}\r\n".format(CHAN).encode("utf-8"))
         print('Bot connected to twitch!')
         return irc
     except Exception as e:
