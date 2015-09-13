@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup as BS
 import socket
 import time
 import datetime
+from winsound import Beep
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
@@ -107,13 +108,20 @@ def twitch_ping_pong(decoded_data):
         irc.send(pong_string)
         pause('Waiting for after the PONG', 5)
 
+
+def beep_speaker(ping_amount=2, delay=1):
+    for tick in range(0, ping_amount):
+        Beep(500, 500)
+        time.sleep(delay)
+
+
 print('--- Starting bot! ---\n')
 connected = False
 cycle = 0
 current_prompt_tick = 0
 spans = scrape_data()
 current_donation_amount = get_donation_amount(spans)
-print('Starting donation amount is: {}\n'.format(current_donation_amount))
+print('Starting donation amount is: {}'.format(current_donation_amount))
 while True:
     print('\n--- Starting cycle: {} ---'.format(cycle))
     if current_prompt_tick >= PROMPT_TICK_TIME:
@@ -127,12 +135,15 @@ while True:
         hours_passed = get_stream_time_elapsed()
         percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
+        beep_speaker(2, 1) # beep 2 times for prompt
         time_string = 'Selezen has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(hours_passed, percentage_done, hours_left)
         donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
         print('Attempting to post the data...')
         try:
+            print('Posting time data...')
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
             time.sleep(2)
+            print('Posting donation data...')
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(donate_string), 'utf-8'))
             time.sleep(2)
             print('Post success!')
@@ -160,9 +171,11 @@ while True:
         received_data = data.decode('utf-8')
         time.sleep(1)
         twitch_ping_pong(received_data)
+        beep_speaker(4, 0.5) # beep 4 times for donation
         new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
         print('Attempting to post the data...')
         try:
+            print('Posting new donation data...')
             irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(new_donation_string), 'utf-8'))
             time.sleep(2)
             print('Post success!')
@@ -177,6 +190,7 @@ while True:
         print('No new donation, starting wait tick')
         display_live_info(TICK_TIME - 1, spans)
         current_prompt_tick += TICK_TIME
-        print('Prompt tick: {} cycles away'.format(round((PROMPT_TICK_TIME - current_prompt_tick) / TICK_TIME, 0)))
+        time_left_to_prompt = (PROMPT_TICK_TIME - current_prompt_tick) / 60
+        print('Next prompt in: {} minutes'.format(round(time_left_to_prompt, 1)))
     print('--- Finished cycle: {} ---'.format(cycle))
     cycle += 1
