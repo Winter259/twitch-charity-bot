@@ -135,7 +135,7 @@ while True:
         hours_passed = get_stream_time_elapsed()
         percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
-        beep_speaker(4, 1) # beep 4 times for prompt
+        beep_speaker(4, 0.25) # beep 4 times for prompt
         time_string = 'Selezen has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(hours_passed, percentage_done, hours_left)
         donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
         print('Attempting to post the data...')
@@ -171,7 +171,7 @@ while True:
         received_data = data.decode('utf-8')
         time.sleep(1)
         twitch_ping_pong(received_data)
-        beep_speaker(10, 0.5) # beep 10 times for donation
+        beep_speaker(10, 0.2) # beep 10 times for donation
         new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
         print('Attempting to post the data...')
         try:
