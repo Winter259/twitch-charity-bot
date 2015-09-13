@@ -15,9 +15,10 @@ PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from her
 CHAN = "#test"                      # the channel you want to join
 """
 
+STREAMER_NAME = 'selezen'  # name of the streamer doing the charity stream.
 URL = 'https://www.justgiving.com/selezen/'  # the url you will be scraping the information from
-PROMPT_TICK_TIME = 15 * 60
-TICK_TIME = 15  # time in seconds between when the bot checks for new donations
+PROMPT_TICK_TIME = 10 * 60  # interval in seconds between when the bot will post prompts
+TICK_TIME = 10  # time in seconds between when the bot checks for new donations
 
 def scrape_data():
     # print('Scraping data...')
@@ -109,7 +110,7 @@ def twitch_ping_pong(decoded_data):
         pause('Waiting for after the PONG', 5)
 
 
-def beep_speaker(ping_amount=2, delay=1):
+def beep_speaker(ping_amount=2, delay=1.0):
     for tick in range(0, ping_amount):
         Beep(500, 500)
         time.sleep(delay)
@@ -135,8 +136,8 @@ while True:
         hours_passed = get_stream_time_elapsed()
         percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
-        beep_speaker(4, 0.25) # beep 4 times for prompt
-        time_string = 'Selezen has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(hours_passed, percentage_done, hours_left)
+        beep_speaker(2, 0.05) # beep 2 times for prompt
+        time_string = '{} has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(STREAMER_NAME, hours_passed, percentage_done, hours_left)
         donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
         print('Attempting to post the data...')
         try:
@@ -171,7 +172,7 @@ while True:
         received_data = data.decode('utf-8')
         time.sleep(1)
         twitch_ping_pong(received_data)
-        beep_speaker(10, 0.2) # beep 10 times for donation
+        beep_speaker(4, 0.25) # beep 4 times for donation
         new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
         print('Attempting to post the data...')
         try:
