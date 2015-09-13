@@ -5,14 +5,15 @@ It also does intermittent prompts for donations to the charity and posts how lon
 
 *Requirements:*
 
-Python 3.4
+- Python 3.4
 
 *Python modules required*
 
 - BeautifulSoup4
+
 Use ```pip install BeautifulSoup4```
 
 *Usage:*
 
-- Place a file, "cfg.py" with the contents as described in main.py in the same directory
+- Place a file, "cfg.py", with the contents as described in main.py in the same directory
 - Run ```python main.py```
