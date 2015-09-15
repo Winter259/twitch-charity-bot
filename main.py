@@ -1,6 +1,6 @@
 import socket
-import time
 import datetime
+from time import sleep
 from urllib.request import urlopen
 from bs4 import BeautifulSoup as BS
 from winsound import Beep
@@ -109,6 +109,21 @@ def twitch_ping_pong(decoded_data):
         pause('Waiting for after the PONG', 5)
 
 
+def post_to_twitch_chat(chat_string=''):
+    if len(chat_string) == 0:
+        print('[-] No string passed to be posted to the chat!')
+    print('[*] Attempting to post the string: {}'.format(chat_string))
+    try:
+        irc.send(bytes('PRIVMSG {} :{}\r\n'.format(CHAN, chat_string), 'utf-8'))
+        print('[+] String posted successfully!')
+        return True
+    except Exception as e:
+        print('[-] Exception occured: {}'.format(str(e)))
+        print('[-] Closing the connection...')
+        irc.close()
+        pause('Waiting for connection to close properly...', 5)
+        return False
+
 def beep_speaker(ping_amount=2, delay=1.0):
     for tick in range(0, ping_amount):
         Beep(500, 500)
@@ -129,32 +144,20 @@ while True:
         irc = connect_to_twitch()
         data = irc.recv(4096) # get output
         received_data = data.decode('utf-8')
-        time.sleep(1)
+        sleep(1)
         twitch_ping_pong(received_data)
         print('Calculating data')
         hours_passed = get_stream_time_elapsed()
         percentage_done = round((hours_passed / 24) * 100, 1)
         hours_left = get_stream_time_left(hours_passed)
         beep_speaker(2, 0.05) # beep 2 times for prompt
-        time_string = '{} has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go!'.format(STREAMER_NAME, hours_passed, percentage_done, hours_left)
-        donate_string = 'Visit {} to donate to the Marie Curie Foundation!'.format(URL)
-        print('Attempting to post the data...')
-        try:
-            print('Posting time data...')
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(time_string), 'utf-8'))
-            time.sleep(2)
-            print('Posting donation data...')
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(donate_string), 'utf-8'))
-            time.sleep(2)
-            print('Post success!')
-        except Exception as e:
-            print(str(e))
-            print('Closing the connection...')
+        time_donate_string = '{} has been streaming for {} hours out of 24. The stream is {}% complete with {} hours to go! Visit {} to donate to the Marie Curie Foundation!'.format(STREAMER_NAME, hours_passed, percentage_done, hours_left, URL)
+        connection = post_to_twitch_chat(time_donate_string)
+        sleep(2)
+        if connection:
+            print('[+] Closing the connection...')
             irc.close()
-            exit(0)
-        print('Closing the connection...')
-        irc.close()
-        pause('Waiting for connection to close properly...', 5)
+            pause('[+] Waiting for connection to close properly...', 5)
         print('Finished prompt cycle')
         current_prompt_tick = 0
     spans = scrape_data()
@@ -164,28 +167,21 @@ while True:
     if not new_donation_amount == current_donation_amount:  # if it is not the same, then it has increased
         print('Starting donation prompt cycle...')
         current_donation_amount = new_donation_amount
-        print('There has been a new donation! Calculating data for update...')
+        print('[+] Donation amount has changed, starting to post')
         amount_of_donators = get_number_of_donations(spans)
         irc = connect_to_twitch()
         data = irc.recv(4096) # get output
         received_data = data.decode('utf-8')
-        time.sleep(1)
+        sleep(1)
         twitch_ping_pong(received_data)
         beep_speaker(4, 0.25) # beep 4 times for donation
         new_donation_string = 'A new donation has come through! Thank you! A total of {} has been raised by {} donators! Visit {} for more information.'.format(new_donation_amount, amount_of_donators, URL)
-        print('Attempting to post the data...')
-        try:
-            print('Posting new donation data...')
-            irc.send(bytes('PRIVMSG #selezen :{}\r\n'.format(new_donation_string), 'utf-8'))
-            time.sleep(2)
-            print('Post success!')
-        except Exception as e:
-            print(str(e))
-            print('Closing the connection...')
+        connection = post_to_twitch_chat(new_donation_string)
+        sleep(2)
+        if connection:
+            print('[+] Closing the connection...')
             irc.close()
-            exit(0)
-        print('Closing the connection...')
-        irc.close()
+            pause('[+] Waiting for connection to close properly...', 5)
     else:
         print('No new donation, starting wait tick')
         display_live_info(TICK_TIME - 1, spans)
