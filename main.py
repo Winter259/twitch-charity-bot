@@ -20,10 +20,10 @@ def pause(prompt='', amount=5):
     ticks = amount
     print(prompt)
     while ticks > 0:
-        print('Pause ends in: {}  '.format(ticks), end='\r')
+        print('[*] Pause ends in: {}  '.format(ticks), end='\r')
         sleep(1)
         ticks -= 1
-    print('Pause ended, continuing now!')
+    print('[+] Pause ended, continuing now!')
 
 
 def connect_to_twitch(channel=CHAN):
@@ -33,7 +33,7 @@ def connect_to_twitch(channel=CHAN):
         irc.send("PASS {}\r\n".format(PASS).encode("utf-8"))
         irc.send("NICK {}\r\n".format(NICK).encode("utf-8"))
         irc.send("JOIN {}\r\n".format(channel).encode("utf-8"))
-        print('Bot connected to twitch!')
+        print('[+] Bot connected to twitch!')
         return irc
     except Exception as e:
         print(str(e))
@@ -61,7 +61,7 @@ def post_to_twitch_chat(chat_string='', channel=CHAN):
         print('[-] Exception occured: {}'.format(str(e)))
         print('[-] Closing the connection...')
         irc.close()
-        pause('Waiting for connection to close properly...', 5)
+        pause('[+] Waiting for connection to close properly...', 5)
         return False
 
 
@@ -74,7 +74,7 @@ def beep_speaker(ping_amount=2, delay=1.0):
 print('--- Starting bot! ---\n')
 connected = False
 cycle = 0
-streamers = ['mahddogg', 'bubblemapgaminglive', 'kerrashlanding', 'fireytoad']
+streamers = ['rheaayase', 'kateclick', 'blackmazetv']
 while True:
     print('\n--- Starting cycle: {} ---'.format(cycle))
     for streamer in streamers:
@@ -85,8 +85,8 @@ while True:
         sleep(1)
         twitch_ping_pong(received_data)
         beep_speaker(1, 0.1) # beep 4 times for donation
-        multitwitch_url = r'http://multitwitch.tv/MahdDogg/BubbleMapGamingLive/FireyToad/KerrashLanding'
-        post_string = 'Watch all four of the mayhem all star stream team here!: {}'.format(multitwitch_url)
+        multitwitch_url = r'http://www.multitwitch.tv/RheaAyase/Kateclick/BlackMazeTV'
+        post_string = 'Watch all three of the mayhem open race streamers here!: {}'.format(multitwitch_url)
         connection = post_to_twitch_chat(post_string, '#{}'.format(streamer))
         sleep(2)
         if connection:
