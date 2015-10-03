@@ -1,6 +1,4 @@
 from pytwitch import *
-from time import *
-from winsound import Beep
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
@@ -10,7 +8,6 @@ CHAN = "#test"                      # the channel you want to join
 STREAMER_NAME = 'test'              # name of the streamer
 PROMPT_TICK_TIME = 10 * 60  # interval in seconds between when the bot will post prompts
 """
-
 
 def main():
     print('--- Starting Purrbot! ---\n')

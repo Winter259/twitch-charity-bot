@@ -1,4 +1,5 @@
 import socket
+from winsound import Beep
 from time import sleep
 from cfg import *
 
