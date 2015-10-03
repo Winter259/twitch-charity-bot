@@ -12,9 +12,18 @@ def pause(prompt='', amount=5):
         ticks -= 1
     print('[+] Pause ended, continuing now!')
 
-HOST = "irc.twitch.tv"  # the Twitch IRC server
+def print_list(prompt='', list_to_print=[]):
+    if len(list_to_print) == 0:
+        print('[-] Attempted to print an empty list!')
+    else:
+        print('[+] {}'.format(prompt))
+        for element in list_to_print:
+            print('[*]\t{}'.format(element))
+
+HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
-DATA_BUFFER_SIZE = 1024
+DATA_BUFFER_SIZE = 2048
+QUEUE_CHECK_DELAY = 10
 CONNECTION_CHECK_DELAY = 3
 
 class Twitch():
@@ -24,17 +33,25 @@ class Twitch():
         self.connection = socket.socket()
         self.connection_checks = 0
         self.channel = self.connect(channel)
+        self.prompt_cycle_interval = 5  # prompt every 5 cycles
+        self.queue = ['Hello', 'my', 'name', 'is', 'Purrbot', '359']
         print('[!] Purrbot initialised and connected!')
 
     def run(self):
         cycle = 1
         while True:
             print('[+] Purrbot is on cycle: {}'.format(cycle))
-            self.check_connection()
-            self.post_in_channel('I am a bot and I am being tested! Cycle: {}'.format(cycle))
-            pause()
-            print('[+] Holding {} seconds for next prompt'.format(PROMPT_TICK_TIME))
-            sleep(PROMPT_TICK_TIME)
+            decoded_response = self.receive_data()  # get response once
+            # TODO if the response matches something like a command or a link, respond instantly
+            self.check_connection(decoded_response)
+            if len(self.queue) == 0:
+                print('[+] Purrbot\'s queue is empty')
+                pause('[+] Holding for next connection check', CONNECTION_CHECK_DELAY)
+            else:
+                print_list('Current queue:', self.queue)
+                current_prompt = self.queue.pop(0)
+                self.post_in_channel(current_prompt)
+                pause('[+] Holding for next queue check', QUEUE_CHECK_DELAY)
             cycle += 1
 
     def connect(self, channel=''):
@@ -53,6 +70,7 @@ class Twitch():
                 exit(0)
 
     def receive_data(self):
+        print('[+] Purrbot is waiting for data to come in from the stream')
         response = self.connection.recv(DATA_BUFFER_SIZE)
         return response.decode('utf-8')
 
@@ -64,10 +82,9 @@ class Twitch():
         print('[!] Purrbot has confirmed its connection to the twitch IRC. Checks so far: {}'.format(self.connection_checks))
         self.connection.send('PONG :tmi.twitch.tv\r\n'.encode('utf-8'))
 
-    def check_connection(self):
+    def check_connection(self, decoded_response):
         print('[?] Purrbot is checking if it is still connected')
         self.connection_checks += 1
-        decoded_response = self.receive_data()
         if decoded_response == 'PING :tmi.twitch.tv\r\n':
             self.ping_pong()
         else:
