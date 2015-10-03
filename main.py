@@ -5,8 +5,6 @@ from cfg import *
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
-HOST = "irc.twitch.tv"              # the Twitch IRC server
-PORT = 6667                         # always use port 6667!
 NICK = "purrbot359"                 # your Twitch username, lowercase
 PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from here: http://www.twitchapps.com/tmi/
 CHAN = "#test"                      # the channel you want to join

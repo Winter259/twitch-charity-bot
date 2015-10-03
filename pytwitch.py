@@ -1,6 +1,9 @@
 import socket
 from cfg import *
 
+HOST = "irc.twitch.tv"  # the Twitch IRC server
+PORT = 6667             # always use port 6667!
+
 class twitch():
     def __init__(self, name='', token=''):
         self.name = name
@@ -9,6 +12,8 @@ class twitch():
     def connect(self, channel=''):
         if len(channel) == 0:
             print('[-] No channel passed!')
+        connection = socket.socket()
+
 
 
 def connect_to_twitch(channel=CHAN):
