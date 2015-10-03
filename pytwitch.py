@@ -18,13 +18,14 @@ def print_list(prompt='', list_to_print=[]):
     else:
         print('[+] {}'.format(prompt))
         for element in list_to_print:
-            print('[*]\t{}'.format(element))
+            print('\t\t>{}'.format(element))
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
-DATA_BUFFER_SIZE = 2048
+DATA_BUFFER_SIZE = 1024
 QUEUE_CHECK_DELAY = 10
 CONNECTION_CHECK_DELAY = 3
+GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot'
 
 class Twitch():
     def __init__(self, name='', token='', channel=''):
@@ -33,6 +34,9 @@ class Twitch():
         self.connection = socket.socket()
         self.connection_checks = 0
         self.channel = self.connect(channel)
+        self.commands = {
+            '!info': 'Purrbot is written by Purrcat259, you can find the source code on github here: {}'.format(GITHUB_URL)
+        }
         self.prompt_cycle_interval = 5  # prompt every 5 cycles
         self.queue = ['Hello', 'my', 'name', 'is', 'Purrbot', '359']
         print('[!] Purrbot initialised and connected!')
@@ -42,8 +46,9 @@ class Twitch():
         while True:
             print('[+] Purrbot is on cycle: {}'.format(cycle))
             decoded_response = self.receive_data()  # get response once
+            self.check_connection(decoded_response)  # always check connection first
             # TODO if the response matches something like a command or a link, respond instantly
-            self.check_connection(decoded_response)
+            self.check_for_command(decoded_response)
             if len(self.queue) == 0:
                 print('[+] Purrbot\'s queue is empty')
                 pause('[+] Holding for next connection check', CONNECTION_CHECK_DELAY)
@@ -102,3 +107,9 @@ class Twitch():
             except Exception as e:
                 print('[-] Exception occurred: {}'.format(str(e)))
                 return False
+
+    def check_for_command(self, decoded_response):
+        for command in self.commands.keys():
+            if command in decoded_response:
+                print('[!] Command: {} detected!'.format(command))
+                self.post_in_channel(self.commands[command])
