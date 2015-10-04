@@ -10,7 +10,7 @@ def pause(prompt='', amount=5):
         print('[*] Pause ends in: {}  '.format(ticks), end='\r')
         sleep(1)
         ticks -= 1
-    print('[+] Pause ended, continuing now!')
+    # print('[+] Pause ended, continuing now!')
 
 def print_list(prompt='', list_to_print=[]):
     if len(list_to_print) == 0:
@@ -18,14 +18,16 @@ def print_list(prompt='', list_to_print=[]):
     else:
         print('[+] {}'.format(prompt))
         for element in list_to_print:
-            print('\t\t>{}'.format(element))
+            print('\t\t> {}'.format(element))
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
+INITIAL_BUFFER_SIZE = 4098
 QUEUE_CHECK_DELAY = 10
 CONNECTION_CHECK_DELAY = 3
-GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot'
+GITHUB = r'https://github.com/Winter259/twitch-charity-bot'
+LINK_DATA = ['www.', '.com', '.org', '.net', '.int', '.edu', '.gov', '.mil']
 
 class Twitch():
     def __init__(self, name='', token='', channel=''):
@@ -34,12 +36,14 @@ class Twitch():
         self.connection = socket.socket()
         self.connection_checks = 0
         self.channel = self.connect(channel)
-        self.commands = {
-            '!info': 'Purrbot is written by Purrcat259, you can find the source code on github here: {}'.format(GITHUB_URL)
+        self.prompt_commands = {
+            '!info': 'Purrbot is written by Purrcat259, you can find the source code on Github here: {}'.format(GITHUB),
+            '!racers': 'Check out the latest events in Elite: Racing at /r/EliteRacers!',
         }
-        self.prompt_cycle_interval = 5  # prompt every 5 cycles
-        self.queue = ['Hello', 'my', 'name', 'is', 'Purrbot', '359']
+        self.queue = ['Hello', 'I', 'am', 'Purrbot359']
         print('[!] Purrbot initialised and connected!')
+        print('[+] Initial buffer content:')
+        self.print_response(INITIAL_BUFFER_SIZE)
 
     def run(self):
         cycle = 1
@@ -48,13 +52,15 @@ class Twitch():
             decoded_response = self.receive_data()  # get response once
             self.check_connection(decoded_response)  # always check connection first
             # TODO if the response matches something like a command or a link, respond instantly
-            self.check_for_command(decoded_response)
-            if len(self.queue) == 0:
-                print('[+] Purrbot\'s queue is empty')
+            command_response = self.check_for_command(decoded_response)
+            if command_response or len(self.queue) == 0:
+                if len(self.queue) == 0:
+                    print('[+] Purrbot\'s queue is empty')
                 pause('[+] Holding for next connection check', CONNECTION_CHECK_DELAY)
             else:
                 print_list('Current queue:', self.queue)
                 current_prompt = self.queue.pop(0)
+                print('[+] Purrbot has popped {} from the front of the queue'.format(current_prompt))
                 self.post_in_channel(current_prompt)
                 pause('[+] Holding for next queue check', QUEUE_CHECK_DELAY)
             cycle += 1
@@ -74,13 +80,13 @@ class Twitch():
                 print('[-] Bot did not manage to connect! Exception occurred: {}'.format(e))
                 exit(0)
 
-    def receive_data(self):
+    def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')
-        response = self.connection.recv(DATA_BUFFER_SIZE)
+        response = self.connection.recv(buffer)
         return response.decode('utf-8')
 
-    def print_response(self):
-        decoded_response = self.receive_data()
+    def print_response(self, buffer=DATA_BUFFER_SIZE):
+        decoded_response = self.receive_data(buffer)
         print('Response: {}'.format(decoded_response))
 
     def ping_pong(self):
@@ -99,17 +105,26 @@ class Twitch():
         if len(chat_string) == 0:
             print('[-] No string passed to be posted to the chat!')
         else:
-            print('[*] Attempting to post the string: {}'.format(chat_string))
+            print('[?] Attempting to post the string: {}'.format(chat_string))
             try:
                 self.connection.send('PRIVMSG {} :{}\r\n'.format(self.channel, chat_string).encode('utf-8'))
-                print('[+] String posted successfully!')
+                print('[!] String posted successfully!')
                 return True
             except Exception as e:
                 print('[-] Exception occurred: {}'.format(str(e)))
                 return False
 
     def check_for_command(self, decoded_response):
-        for command in self.commands.keys():
+        # check for links
+        for data in LINK_DATA:
+            if data in decoded_response:
+                print('[!] Link detected with part: {}'.format(data))
+                self.post_in_channel('Link detected!')
+                return True
+        # check for prompts
+        for command in self.prompt_commands.keys():
             if command in decoded_response:
-                print('[!] Command: {} detected!'.format(command))
-                self.post_in_channel(self.commands[command])
+                print('[!] Prompt command: {} detected!'.format(command))
+                self.post_in_channel(self.prompt_commands[command])
+                return True
+
