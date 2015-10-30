@@ -14,6 +14,7 @@ def pause(prompt='', amount=5):
         print('[*] Pause ends in: {}  '.format(ticks), end='\r')
         sleep(1)
         ticks -= 1
+    print('                                                            ')  # clear line completely
     # print('[+] Pause ended, continuing now!')
 
 def print_list(prompt='', list_to_print=[]):
@@ -73,7 +74,10 @@ class Twitch:
                 print('[!] Purrbot has detected a new donation!')
                 # create a string to post in channels
                 chat_string = 'NEW DONATION! {} has been raised! Visit: {} to donate!'.format(new_money_raised, CHARITY_URL)
-
+                for streamer in STREAMERS:
+                    channel = '#{}'.format(streamer)
+                    self.post_in_channel(channel, chat_string)
+                    pause('Holding for disconnect', 5)
             # if not, check if cycle count has exceeded the amount required for a prompt
             # if not, check for purrbot info command
             # if not, wait for the check tick
@@ -83,6 +87,7 @@ class Twitch:
     def connect(self, channel=''):
         if len(channel) == 0:
             print('[-] No channel passed to Purrbot!')
+            return False
         else:
             try:
                 self.connection.connect((HOST, PORT))
@@ -90,10 +95,13 @@ class Twitch:
                 self.connection.send("NICK {}\r\n".format(NICK).encode("utf-8"))
                 self.connection.send("JOIN {}\r\n".format(channel).encode("utf-8"))
                 print('[+] Purrbot has successfully connected to the twitch irc channel: {}'.format(channel))
-                return channel
+                return True
             except Exception as e:
                 print('[-] Purrbot did not manage to connect! Exception occurred: {}'.format(e))
-                exit(0)
+                return False
+
+    def close_connection(self):
+        self.connection.close()
 
     def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')
@@ -108,19 +116,23 @@ class Twitch:
         if len(channel) == 0:
             print('[-] No channel passed to post string!')
             return False
-        self.connect(channel)
-        print('[+] Initial buffer content:')
-        self.print_response(INITIAL_BUFFER_SIZE)
-        if len(chat_string) == 0:
-            print('[-] No string passed to be posted to the chat!')
-            return False
-        else:
-            print('[?] Attempting to post the string:')
-            print('\t', chat_string)
-            try:
-                self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
-                print('[!] String posted successfully!')
-                return True
-            except Exception as e:
-                print('[-] Exception occurred: {}'.format(str(e)))
+        if self.connect(channel):
+            # print('[+] Initial buffer content:')
+            # self.print_response(INITIAL_BUFFER_SIZE)
+            if len(chat_string) == 0:
+                print('[-] No string passed to be posted to the chat!')
+                self.close_connection()
                 return False
+            else:
+                print('[?] Attempting to post the string:')
+                print('\t', chat_string)
+                try:
+                    self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
+                    print('[!] String posted successfully!')
+                    Beep(200, 15)
+                    self.close_connection()
+                    return True
+                except Exception as e:
+                    print('[-] Exception occurred: {}'.format(str(e)))
+                    self.close_connection()
+                    return False
