@@ -207,7 +207,7 @@ class Twitch:
                     self.close_connection()
                     return False
 
-        # db return functions
+    # db return functions
 
     def get_db_data(self):
         try:
