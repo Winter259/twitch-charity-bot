@@ -7,6 +7,8 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from cfg import *
 
+# misc functions
+
 def pause(prompt='', amount=5):
     ticks = amount
     print(prompt)
@@ -35,6 +37,10 @@ CYCLES_FOR_PROMPT = (15 * 60) / 5
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/specialevents/RibbonofHope'  # PLACEHOLDER FOR TESTING
 STREAMERS = ['purrcat259']
+# MISC
+testing_mode = True
+
+# return functions
 
 def get_donation_amount():
     print('[+] Purrbot is scraping the url...')
@@ -44,14 +50,14 @@ def get_donation_amount():
     achieved_amount = td[0].text  # get just the text
     return achieved_amount
 
+def get_current_epoch():
+    return time.mktime(datetime.now().timetuple())
+
 def get_time_passed():
-    now_time = datetime.now()
-    epoch = time.mktime(now_time.timetuple())
-    # print('Current Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t, epoch))
     old_time = datetime(2015, 10, 14, 1, 00, 00)
     epoch_old = time.mktime(old_time.timetuple())
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
-    epoch_passed = epoch - epoch_old
+    epoch_passed = get_current_epoch() - epoch_old
     hours_passed = round(((epoch_passed / 60) / 60), 1)
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
@@ -66,6 +72,7 @@ def get_percentage_left():
     percentage_done = round((hours_passed / 72) * 100, 1)
     return percentage_done
 
+
 class Twitch:
     def __init__(self, name='', token='', channel=''):
         self.name = name
@@ -75,6 +82,12 @@ class Twitch:
         self.cycle_count = 0
         self.prompt_index = 0  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
+        self.dbcon = sqlite3.connect('ggforcharity.db')
+        self.dbcur = self.dbcon.cursor()
+        if testing_mode:
+            self.dbtable = 'testing'
+        else:
+            self.dbtable = 'events'
         """
         self.connect(channel)
         print('[+] Initial buffer content:')
@@ -85,6 +98,7 @@ class Twitch:
         current_money_raised = get_donation_amount()
         while True:
             self.prompt_cycles += 1
+            event_tuple = self.get_event_data()
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
             # get donation amount
             new_money_raised = get_donation_amount()
@@ -97,7 +111,8 @@ class Twitch:
                     channel = '#{}'.format(streamer)
                     self.post_in_channel(channel, chat_string)
                     pause('Holding for disconnect', 3)
-            elif self.prompt_cycles == CYCLES_FOR_PROMPT:  # if not, check if cycle count has exceeded the amount required for a prompt
+            # if not, check if cycle count has exceeded the amount required for a prompt
+            elif self.prompt_cycles == CYCLES_FOR_PROMPT:
                 self.prompt_cycles = 0
                 # decide which string to use
                 if self.prompt_index == 0:
@@ -115,10 +130,16 @@ class Twitch:
                 self.prompt_index += 1
                 if self.prompt_index == 3:
                     self.prompt_index = 0
-                for streamer in STREAMERS:
-                    channel = '#{}'.format(streamer)
-                    self.post_in_channel(channel, prompt_string)
-                    pause('Holding for disconnect', 5)
+                # get streamers from events, not a pre-defined list
+                current_event_data = event_tuple[0]
+                print('[+] Current event: ', current_event_data)
+                current_events = [(current_event_data[3], current_event_data[4]), (current_event_data[5], current_event_data[6])]
+                for subevent in current_events:
+                    print('[+] Event: {} Streamers: {}'.format(subevent[0], subevent[1]))
+                    for streamer in subevent[1]:
+                        channel = '#{}'.format(streamer)
+                        self.post_in_channel(channel, prompt_string)
+                        pause('Holding for disconnect', 5)
             # if not, wait for the amount of the check tick
             pause('[+] Holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
@@ -175,3 +196,31 @@ class Twitch:
                     print('[-] Exception occurred: {}'.format(str(e)))
                     self.close_connection()
                     return False
+
+        # db return functions
+
+    def get_db_data(self):
+        try:
+            data = self.dbcur.execute('SELECT * FROM {}'.format(self.dbtable))
+            return data
+        except Exception:
+            print('[-] Purrbot was unable to interface with the database: ', Exception)
+            return ()
+
+    def get_event_data(self):
+        db_events = self.get_db_data()
+        current_event = ()
+        events = []
+        events_left = []
+        for row in db_events:  # change from db cursor to iterable format
+            events.append(row)
+        for event in events:
+            if event[2] < get_current_epoch():
+                current_event = event  # will grab current event
+        # place remaining events in another list
+        for event in events:
+            if event[2] > get_current_epoch():
+                events_left.append(event)
+        print_list('Events:', events_left)
+        print('Current event:', current_event)
+        return current_event, events_left
