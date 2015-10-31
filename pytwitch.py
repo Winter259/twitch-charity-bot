@@ -48,7 +48,7 @@ def get_time_passed():
     now_time = datetime.now()
     epoch = time.mktime(now_time.timetuple())
     # print('Current Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t, epoch))
-    old_time = datetime.datetime(2015, 10, 14, 1, 00, 00)
+    old_time = datetime(2015, 10, 14, 1, 00, 00)
     epoch_old = time.mktime(old_time.timetuple())
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
     epoch_passed = epoch - epoch_old
@@ -101,16 +101,20 @@ class Twitch:
                 self.prompt_cycles = 0
                 # decide which string to use
                 if self.prompt_index == 0:
-                    prompt_string = r'Purrbot is written in python by CMDR Purrcat. You can find the source code here: {} Donate at: {}'.format(GITHUB_URL, CHARITY_URL)
+                    prompt_string = r'Donations for GGforCharity can be made at: {} Purrbot is a custom bot written in python by Purrcat259. You can find the source here: {}'.format(CHARITY_URL, GITHUB_URL)
                 elif self.prompt_index == 1:
                     hours_passed = get_time_passed()
                     hours_left = get_time_left(hours_passed)
                     hours_done_percentage = get_percentage_left()
-                    prompt_string = r'Time check! Hours elapsed: {}/72 {} hours to go! Stream progress: {}% Donate at: {}'.format(hours_passed, hours_left, hours_done_percentage, CHARITY_URL)
+                    prompt_string = r'Time check! Hours elapsed: {}/72, {} hours to go! Stream progress: {}% Donate at: {}'.format(hours_passed, hours_left, hours_done_percentage, CHARITY_URL)
                 elif self.prompt_index == 2:
-                    prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format( ,CHARITY_URL)
+                    prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format(new_money_raised ,CHARITY_URL)
                 else:
-                    pass
+                    prompt_string = r''  # placeholder for more
+                # iterate prompt index and if > than limit, reset
+                self.prompt_index += 1
+                if self.prompt_index == 3:
+                    self.prompt_index = 0
                 for streamer in STREAMERS:
                     channel = '#{}'.format(streamer)
                     self.post_in_channel(channel, prompt_string)
