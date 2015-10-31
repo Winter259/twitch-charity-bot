@@ -16,7 +16,7 @@ def pause(prompt='', amount=5):
         print('[*] Pause ends in: {}  '.format(ticks), end='\r')
         time.sleep(1)
         ticks -= 1
-    print('                                                            ')  # clear line completely
+    print('                                                            ', end='\r')  # clear line completely
     # print('[+] Pause ended, continuing now!')
 
 def print_list(prompt='', list_to_print=[]):
@@ -32,8 +32,9 @@ PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
-CHECK_TICK = 5
-CYCLES_FOR_PROMPT = (15 * 60) / 5
+CHECK_TICK = 3  # seconds between checks
+#CYCLES_FOR_PROMPT = (15 * 60) / 5
+CYCLES_FOR_PROMPT = 3
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/specialevents/RibbonofHope'  # PLACEHOLDER FOR TESTING
 STREAMERS = ['purrcat259']
@@ -78,7 +79,7 @@ class Twitch:
         self.name = name
         self.token = token
         self.channel = channel
-        self.connection = socket.socket()
+        # self.connection = socket.socket()
         self.cycle_count = 0
         self.prompt_index = 0  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
@@ -110,13 +111,12 @@ class Twitch:
                 for streamer in STREAMERS:
                     channel = '#{}'.format(streamer)
                     self.post_in_channel(channel, chat_string)
-                    pause('Holding for disconnect', 3)
             # if not, check if cycle count has exceeded the amount required for a prompt
             elif self.prompt_cycles == CYCLES_FOR_PROMPT:
                 self.prompt_cycles = 0
                 # decide which string to use
                 if self.prompt_index == 0:
-                    prompt_string = r'Donations for GGforCharity can be made at: {} Purrbot is a custom bot written in python by Purrcat259. You can find the source here: {}'.format(CHARITY_URL, GITHUB_URL)
+                    prompt_string = r'Donations for GGforCharity can be made at: {} Purrbot is a custom bot for GGforCharity written in python by Purrcat259. You can find the source here: {}'.format(CHARITY_URL, GITHUB_URL)
                 elif self.prompt_index == 1:
                     hours_passed = get_time_passed()
                     hours_left = get_time_left(hours_passed)
@@ -133,13 +133,21 @@ class Twitch:
                 # get streamers from events, not a pre-defined list
                 current_event_data = event_tuple[0]
                 print('[+] Current event: ', current_event_data)
-                current_events = [(current_event_data[3], current_event_data[4]), (current_event_data[5], current_event_data[6])]
+                # change the text string into an iterable list
+                if not current_event_data[4] is None:
+                    event_one_streamers = current_event_data[4].split(',')
+                else:
+                    event_one_streamers = []
+                if not current_event_data[6] is None:
+                    event_two_streamers = current_event_data[6].split(',')
+                else:
+                    event_two_streamers = []
+                current_events = [(current_event_data[3], event_one_streamers), (current_event_data[5], event_two_streamers)]
                 for subevent in current_events:
                     print('[+] Event: {} Streamers: {}'.format(subevent[0], subevent[1]))
                     for streamer in subevent[1]:
                         channel = '#{}'.format(streamer)
                         self.post_in_channel(channel, prompt_string)
-                        pause('Holding for disconnect', 5)
             # if not, wait for the amount of the check tick
             pause('[+] Holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
@@ -150,6 +158,7 @@ class Twitch:
             return False
         else:
             try:
+                self.connection = socket.socket()
                 self.connection.connect((HOST, PORT))
                 self.connection.send("PASS {}\r\n".format(PASS).encode("utf-8"))
                 self.connection.send("NICK {}\r\n".format(NICK).encode("utf-8"))
@@ -162,6 +171,7 @@ class Twitch:
 
     def close_connection(self):
         self.connection.close()
+        pause('[+] Holding for disconnect', 4)
 
     def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')
@@ -170,7 +180,7 @@ class Twitch:
 
     def print_response(self, buffer=DATA_BUFFER_SIZE):
         decoded_response = self.receive_data(buffer)
-        print('Response: {}'.format(decoded_response))
+        print('[!] Response: {}'.format(decoded_response))
 
     def post_in_channel(self, channel='',chat_string=''):
         if len(channel) == 0:
@@ -189,7 +199,7 @@ class Twitch:
                 try:
                     self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                     print('[!] String posted successfully!')
-                    Beep(200, 15)
+                    Beep(200, 100)
                     self.close_connection()
                     return True
                 except Exception as e:
@@ -221,6 +231,6 @@ class Twitch:
         for event in events:
             if event[2] > get_current_epoch():
                 events_left.append(event)
-        print_list('Events:', events_left)
-        print('Current event:', current_event)
+        #print_list('Events:', events_left)
+        #print('Current event:', current_event)
         return current_event, events_left
