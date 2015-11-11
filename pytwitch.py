@@ -147,8 +147,6 @@ class Twitch:
                 self.prompt_cycles = 0
                 # decide which string to use
                 if self.prompt_index == 0:
-                    prompt_string = r'Donations for GGforCharity can be made at: {} Purrbot is a custom bot for GGforCharity written in python by Purrcat259. You can find the source here: {}'.format(CHARITY_URL, GITHUB_URL)
-                elif self.prompt_index == 1:
                     hours_passed = get_time_passed()
                     hours_left = get_time_left(hours_passed)
                     hours_done_percentage = get_percentage_left()
@@ -158,31 +156,33 @@ class Twitch:
                         hours_done_percentage,
                         CHARITY_URL
                     )
-                elif self.prompt_index == 2:
+                elif self.prompt_index == 1:
                     prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format(new_money_raised ,CHARITY_URL)
-                elif self.prompt_index == 3:
+                elif self.prompt_index == 2:
                     event_one = current_events[0][0]
                     event_two = current_events[1][0]
                     if len(event_two_streamers) == 0:
                         streamers = current_event_data[0][1]
-                        prompt_string = r'Current GGforCharity Event: {} Watch the event streamers at: {}'.format(
+                        prompt_string = r'Current GGforCharity Event: {} Watch the event streamers at: {} Donate at: {}'.format(
                             event_one,
-                            return_kadgar_link(streamers)
+                            return_kadgar_link(streamers),
+                            CHARITY_URL
                         )
                     else:
                         streamers_one = current_event_data[0][1]
                         streamers_two = current_event_data[1][1]
-                        prompt_string = r'Current GGforCharity Events: Event 1: {} Watch event 1 here: {} Event 2: {} Watch event 2 here: {}'.format(
+                        prompt_string = r'Current GGforCharity Events: Event 1: {} Watch event 1 here: {} Event 2: {} Watch event 2 here: {} . Donate at: {}'.format(
                             event_one,
                             event_two,
                             return_kadgar_link(streamers_one),
-                            return_kadgar_link(streamers_two)
+                            return_kadgar_link(streamers_two),
+                            CHARITY_URL
                         )
                 else:
                     prompt_string = r''  # placeholder for more... TODO: current events, next events staring in XYZ hours?
                 # iterate prompt index and if > than limit, reset
                 self.prompt_index += 1
-                if self.prompt_index == 4:
+                if self.prompt_index == 3:
                     self.prompt_index = 0
                 # post per event and streamer
                 for subevent in current_events:
