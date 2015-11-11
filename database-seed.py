@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 table_name = 'testing'
-record_count = 10
+record_count = 50
 event_titles = ['EliteEvent', 'Karaoke Night', 'Pankating', 'Mahddogging', 'Fireytoading', 'RheaAyasing']
 streamers = ['purrbot359', 'purrcat259', 'purrcat259,purrbot359']
 

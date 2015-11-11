@@ -47,7 +47,7 @@ if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
     CYCLES_FOR_PROMPT = 3
 
-# return functions
+# global return functions
 
 def get_donation_amount():
     print('[+] Purrbot is scraping the url...')
@@ -138,22 +138,23 @@ class Twitch:
                     channel = '#{}'.format(streamer)  # channel string is #<streamer name>
                     self.post_in_channel(channel, chat_string)
             else:  # if not, check if the amount of cycles has exceeded the amount required for a prompt
-                if self.prompt_cycles == CYCLES_FOR_PROMPT:
+                if self.prompt_cycles == CYCLES_FOR_PROMPT and not len(current_event_data) == 0:
                     print('[+] Purrbot is going to post a prompt!')
                     self.prompt_cycles = 0  # reset this value for the cycle to reset
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''
                     if self.prompt_index == 0:  # money counter and schedule link
-                        prompt_string = r'[1] GGforCharity has raised: {} so far! Donate at: {} Check out the schedule at: {}'.format(
+                        prompt_string = r'[1] GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
                             new_money_raised,
                             CHARITY_URL,
                             SCHEDULE_URL
                         )
                     elif self.prompt_index == 1:  # current event prompt with kadgar links
-                        print_list('[+] Current ongoing events: {}', current_event_data)
+                        print_list('Current ongoing events: {}', current_event_data)
                         prompt_string = r'[2] Current GGforCharity streams: '
                         for ongoing_event in current_event_data:
-                            prompt_string += r'{}, {} (GMT), watch at: {} '.format(
+                            prompt_string += r'Event {}: {}, {} (GMT), watch at: {}  '.format(
+                                ongoing_event['RowId'],
                                 ongoing_event['Event'],
                                 ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
@@ -167,6 +168,8 @@ class Twitch:
                         for streamer in ongoing_event['Streamers']:
                             channel = '#{}'.format(streamer)
                             self.post_in_channel(channel, prompt_string)
+                if len(current_event_data) == 0:
+                    print('[-] No event currently ongoing. Purrbot will not post any prompts')
             # wait the check tick regardless of what the bot does
             pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
@@ -280,7 +283,7 @@ class Twitch:
                     'Streamers': streamers
                 }
                 current_events.append(current_event)
-        print_list('Current Events: ', current_events)
+        print_list('Current Events: ', current_events)  # TODO print this a bit nicer
         for event in current_events:
-            print('Streamers:', event['Streamers'])
+            print_list('Current streamers:', event['Streamers'])
         return current_events
