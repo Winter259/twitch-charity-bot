@@ -285,7 +285,9 @@ class Twitch:
                     'Streamers': streamers
                 }
                 current_events.append(current_event)
-        print_list('Current Events: ', current_events)  # TODO print this a bit nicer
+        print('Current Events:')
+        for event_data in current_events:
+            print('\t> [{}] {} {} by {}'.format(event_data['RowId'], event_data['Day'], event_data['Event'], event_data['Streamers']))
         for event in current_events:
             print_list('Current streamers:', event['Streamers'])
         return current_events
