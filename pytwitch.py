@@ -137,6 +137,7 @@ class Twitch:
                     self.post_in_channel(channel, chat_string)
             else:  # if not, check if the amount of cycles has exceeded the amount required for a prompt
                 if self.prompt_cycles == CYCLES_FOR_PROMPT:
+                    print('[+] Purrbot is going to post a prompt!')
                     self.prompt_cycles = 0  # reset this value for the cycle to reset
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''
@@ -186,7 +187,7 @@ class Twitch:
 
     def close_connection(self):
         self.connection.close()
-        pause('[+] Holding for disconnect', 4)
+        pause('[+] Holding for disconnect', 3)
 
     def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')

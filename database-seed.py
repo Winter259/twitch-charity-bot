@@ -37,7 +37,7 @@ for number in range(1, record_count):
     event_title = random.choice(event_titles)
     streamer = random.choice(streamers)
     dbcur.execute('INSERT INTO {} VALUES (NULL, ?, ?, ?, ?, ?)'.format(table_name), (day_string, current_time_epoch, end_time, event_title,  streamer))
-    current_time_epoch += random.choice((0, 20, 40))
+    current_time_epoch += random.choice((0, 60, 120))
 print('Commiting data')
 dbcon.commit()
 print('Closing connection')
