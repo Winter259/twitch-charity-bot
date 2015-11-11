@@ -121,10 +121,11 @@ class Twitch:
         while True:
             self.prompt_cycles += 1
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
-            self.get_current_events()
-            # get streamers from events, not a pre-defined list
-            current_event_data = self.get_event_data()[0]
-            print('[+] Current event: ', current_event_data)
+            current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
+            for ongoing_event in current_event_data:
+                print('[+] Current ongoing event: {}'.format(ongoing_event))
+                # figure out if there are one or two
+
             # change the text string into an iterable list
             if not current_event_data[4] is None:
                 event_one_streamers = current_event_data[4].split(',')
