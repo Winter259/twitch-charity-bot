@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from cfg import *
 
 # for testing:
-
 # kadgar.net/live/purrcat259/purrbot359
 
 # misc functions
@@ -42,6 +41,7 @@ CYCLES_FOR_PROMPT = 3
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
 STREAMERS = ['purrcat259']
+SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 # MISC
 testing_mode = True
 
@@ -55,8 +55,11 @@ def get_donation_amount():
     achieved_amount = td[0].text  # get just the text
     return achieved_amount
 
-def get_current_epoch():
-    return time.mktime(datetime.now().timetuple())
+def get_current_epoch(roundNum=False):
+    current_time = time.mktime(datetime.now().timetuple())
+    if roundNum:
+        current_time = round(current_time, 0)
+    return int(current_time)
 
 def get_time_passed():
     old_time = datetime(2015, 10, 14, 1, 00, 00)
@@ -114,10 +117,11 @@ class Twitch:
         """
 
     def run(self):
-        current_money_raised = get_donation_amount()
+        current_money_raised = get_donation_amount()  # Get the donation amount once before starting the loops, for comparison
         while True:
             self.prompt_cycles += 1
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
+            self.get_current_events()
             # get streamers from events, not a pre-defined list
             current_event_data = self.get_event_data()[0]
             print('[+] Current event: ', current_event_data)
@@ -147,23 +151,17 @@ class Twitch:
                 self.prompt_cycles = 0
                 # decide which string to use
                 if self.prompt_index == 0:
-                    hours_passed = get_time_passed()
-                    hours_left = get_time_left(hours_passed)
-                    hours_done_percentage = get_percentage_left()
-                    prompt_string = r'Time check! Hours elapsed: {}/72, {} hours to go! Stream progress: {}% Donate at: {}'.format(
-                        hours_passed,
-                        hours_left,
-                        hours_done_percentage,
-                        CHARITY_URL
+                    prompt_string = r'GGforCharity has raised: {} so far! Donate at: {} Check out the schedule at: {}'.format(
+                        new_money_raised,
+                        CHARITY_URL,
+                        SCHEDULE_URL
                     )
                 elif self.prompt_index == 1:
-                    prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format(new_money_raised ,CHARITY_URL)
-                elif self.prompt_index == 2:
                     event_one = current_events[0][0]
                     event_two = current_events[1][0]
                     if len(event_two_streamers) == 0:
                         streamers = current_event_data[0][1]
-                        prompt_string = r'Current GGforCharity Event: {} Watch the event streamers at: {} Donate at: {}'.format(
+                        prompt_string = r'Current GGforCharity Event: {} Watch the current event streamers at: {} Donate at: {}'.format(
                             event_one,
                             return_kadgar_link(streamers),
                             CHARITY_URL
@@ -182,7 +180,7 @@ class Twitch:
                     prompt_string = r''  # placeholder for more... TODO: current events, next events staring in XYZ hours?
                 # iterate prompt index and if > than limit, reset
                 self.prompt_index += 1
-                if self.prompt_index == 3:
+                if self.prompt_index == 2:
                     self.prompt_index = 0
                 # post per event and streamer
                 for subevent in current_events:
@@ -276,3 +274,29 @@ class Twitch:
         #print_list('Events:', events_left)
         #print('Current event:', current_event)
         return current_event, events_left
+
+    def get_current_events(self):
+        current_time_epoch = get_current_epoch(roundNum=True)
+        db_events = self.get_db_data()
+        all_event_data = []
+        current_events = []
+        for row in db_events:
+            all_event_data.append(row)
+        for event in all_event_data:
+            event_start_time = event[2]
+            event_end_time = event[3]
+            #print('Current: {} Start: {} End: {}'.format(current_time_epoch, event_start_time, event_end_time))
+            if (current_time_epoch > event_start_time) and (current_time_epoch < event_end_time):
+                #print('It is a current event!')
+                current_event = {
+                    'RowId': event[0],
+                    'Day': event[1],
+                    'EndTime': event[3],
+                    'EventOne': event[4],
+                    'StreamersOne': event[5],
+                    'EventTwo': event[6],
+                    'StreamersTwo': event[7]
+                }
+                current_events.append(current_event)
+        print_list('Current Events: ', current_events)
+        return current_events
