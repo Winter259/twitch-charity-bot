@@ -91,8 +91,7 @@ def return_kadgar_link(streamer_list=[]):
         return twitch_link
     kadgar_link = 'http://kadgar.net/live'
     for streamer in streamer_list:
-        kadgar_link += '/'
-        kadgar_link += streamer
+        kadgar_link += '/' + streamer
     return kadgar_link
 
 class Twitch:
@@ -137,55 +136,35 @@ class Twitch:
                     channel = '#{}'.format(streamer)  # channel string is #<streamer name>
                     self.post_in_channel(channel, chat_string)
             else:  # if not, check if the amount of cycles has exceeded the amount required for a prompt
-                print_list('[+] Current ongoing events: {}', )
-                for ongoing_event in current_event_data:
-                    pass
-            """
-            # if not, check if cycle count has exceeded the amount required for a prompt
-            elif self.prompt_cycles == CYCLES_FOR_PROMPT:
-                self.prompt_cycles = 0
-                # decide which string to use
-                if self.prompt_index == 0:
-                    prompt_string = r'GGforCharity has raised: {} so far! Donate at: {} Check out the schedule at: {}'.format(
-                        new_money_raised,
-                        CHARITY_URL,
-                        SCHEDULE_URL
-                    )
-                elif self.prompt_index == 1:
-                    event_one = current_events[0][0]
-                    event_two = current_events[1][0]
-                    if len(event_two_streamers) == 0:
-                        streamers = current_event_data[0][1]
-                        prompt_string = r'Current GGforCharity Event: {} Watch the current event streamers at: {} Donate at: {}'.format(
-                            event_one,
-                            return_kadgar_link(streamers),
-                            CHARITY_URL
+                if self.prompt_cycles == CYCLES_FOR_PROMPT:
+                    self.prompt_cycles = 0  # reset this value for the cycle to reset
+                    # now we decide which chat string to post, round robin between a set number
+                    prompt_string = ''
+                    if self.prompt_index == 0:  # money counter and schedule link
+                        prompt_string = r'GGforCharity has rasied: {} so far! Donate at: {} Check out the schedule at: {}'.format(
+                            new_money_raised,
+                            CHARITY_URL,
+                            SCHEDULE_URL
                         )
-                    else:
-                        streamers_one = current_event_data[0][1]
-                        streamers_two = current_event_data[1][1]
-                        prompt_string = r'Current GGforCharity Events: Event 1: {} Watch event 1 here: {} Event 2: {} Watch event 2 here: {} . Donate at: {}'.format(
-                            event_one,
-                            event_two,
-                            return_kadgar_link(streamers_one),
-                            return_kadgar_link(streamers_two),
-                            CHARITY_URL
-                        )
-                else:
-                    prompt_string = r''  # placeholder for more... TODO: current events, next events staring in XYZ hours?
-                # iterate prompt index and if > than limit, reset
-                self.prompt_index += 1
-                if self.prompt_index == 2:
-                    self.prompt_index = 0
-                # post per event and streamer
-                for subevent in current_events:
-                    print('[+] Event: {} Streamers: {}'.format(subevent[0], subevent[1]))
-                    for streamer in subevent[1]:
-                        channel = '#{}'.format(streamer)
-                        self.post_in_channel(channel, prompt_string)
-            # if not, wait for the amount of the check tick
-            """
-            pause('[+] Holding for next cycle', CHECK_TICK)
+                    elif self.prompt_index == 1:  # current event prompt with kadgar links
+                        print_list('[+] Current ongoing events: {}', current_event_data)
+                        prompt_string = r'Current GGforCharty streams: '
+                        for ongoing_event in current_event_data:
+                            prompt_string += r'{}, watch at: {} '.format(
+                                ongoing_event['Event'],
+                                return_kadgar_link(ongoing_event['Streamers'])
+                            )
+                    # iterate prompt index and if > than limit, reset
+                    self.prompt_index += 1
+                    if self.prompt_index == 2:
+                        self.prompt_index = 0
+                    # post the prompt string per streamer
+                    for ongoing_event in current_event_data:
+                        for streamer in ongoing_event['Streamers']:
+                            channel = '#{}'.format(streamer)
+                            self.post_in_channel(channel, prompt_string)
+            # wait the check tick regardless of what the bot does
+            pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
     def connect(self, channel=''):
