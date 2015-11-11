@@ -36,14 +36,16 @@ DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
 CHECK_TICK = 3  # seconds between checks
-#CYCLES_FOR_PROMPT = (15 * 60) / 5
-CYCLES_FOR_PROMPT = 3
+CYCLES_FOR_PROMPT = (15 * 60) / 5
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
-STREAMERS = ['purrcat259']
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 # MISC
 testing_mode = True
+# set global testing variables
+if testing_mode:
+    print('[!] PURRBOT IS IN TESTING MODE!')
+    CYCLES_FOR_PROMPT = 3
 
 # return functions
 
