@@ -77,6 +77,20 @@ def get_percentage_left():
     percentage_done = round((hours_passed / 72) * 100, 1)
     return percentage_done
 
+def return_kadgar_link(streamer_list=[]):
+    if len(streamer_list) == 0:
+        print('[-] No streamers passed to the kadgar link generator!')
+        return ''
+    if len(streamer_list) == 1:
+        print('[+] Only one streamer passed, passing twitch stream link instead')
+        twitch_link = 'http://www.twitch.tv/'
+        twitch_link += streamer_list[0]
+        return twitch_link
+    kadgar_link = 'http://kadgar.net/live'
+    for streamer in streamer_list:
+        kadgar_link += '/'
+        kadgar_link += streamer
+    return kadgar_link
 
 class Twitch:
     def __init__(self, name='', token='', channel=''):
@@ -138,14 +152,37 @@ class Twitch:
                     hours_passed = get_time_passed()
                     hours_left = get_time_left(hours_passed)
                     hours_done_percentage = get_percentage_left()
-                    prompt_string = r'Time check! Hours elapsed: {}/72, {} hours to go! Stream progress: {}% Donate at: {}'.format(hours_passed, hours_left, hours_done_percentage, CHARITY_URL)
+                    prompt_string = r'Time check! Hours elapsed: {}/72, {} hours to go! Stream progress: {}% Donate at: {}'.format(
+                        hours_passed,
+                        hours_left,
+                        hours_done_percentage,
+                        CHARITY_URL
+                    )
                 elif self.prompt_index == 2:
                     prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format(new_money_raised ,CHARITY_URL)
+                elif self.prompt_index == 3:
+                    event_one = current_events[0][0]
+                    event_two = current_events[1][0]
+                    if len(event_two_streamers) == 0:
+                        streamers = current_event_data[0][1]
+                        prompt_string = r'Current GGforCharity Event: {} Watch the event streamers at: {}'.format(
+                            event_one,
+                            return_kadgar_link(streamers)
+                        )
+                    else:
+                        streamers_one = current_event_data[0][1]
+                        streamers_two = current_event_data[1][1]
+                        prompt_string = r'Current GGforCharity Events: Event 1: {} Watch event 1 here: {} Event 2: {} Watch event 2 here: {}'.format(
+                            event_one,
+                            event_two,
+                            return_kadgar_link(streamers_one),
+                            return_kadgar_link(streamers_two)
+                        )
                 else:
                     prompt_string = r''  # placeholder for more... TODO: current events, next events staring in XYZ hours?
                 # iterate prompt index and if > than limit, reset
                 self.prompt_index += 1
-                if self.prompt_index == 3:
+                if self.prompt_index == 4:
                     self.prompt_index = 0
                 # post per event and streamer
                 for subevent in current_events:
