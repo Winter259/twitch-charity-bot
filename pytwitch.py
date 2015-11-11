@@ -7,6 +7,10 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from cfg import *
 
+# for testing:
+
+# kadgar.net/live/purrcat259/purrbot359
+
 # misc functions
 
 def pause(prompt='', amount=5):
@@ -36,7 +40,7 @@ CHECK_TICK = 3  # seconds between checks
 #CYCLES_FOR_PROMPT = (15 * 60) / 5
 CYCLES_FOR_PROMPT = 3
 # Stream specific
-CHARITY_URL = r'http://pmhf3.akaraisin.com/specialevents/RibbonofHope'  # PLACEHOLDER FOR TESTING
+CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
 STREAMERS = ['purrcat259']
 # MISC
 testing_mode = True
@@ -99,8 +103,20 @@ class Twitch:
         current_money_raised = get_donation_amount()
         while True:
             self.prompt_cycles += 1
-            event_tuple = self.get_event_data()
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
+            # get streamers from events, not a pre-defined list
+            current_event_data = self.get_event_data()[0]
+            print('[+] Current event: ', current_event_data)
+            # change the text string into an iterable list
+            if not current_event_data[4] is None:
+                event_one_streamers = current_event_data[4].split(',')
+            else:
+                event_one_streamers = []
+            if not current_event_data[6] is None:
+                event_two_streamers = current_event_data[6].split(',')
+            else:
+                event_two_streamers = []
+            current_events = [(current_event_data[3], event_one_streamers), (current_event_data[5], event_two_streamers)]
             # get donation amount
             new_money_raised = get_donation_amount()
             # if donation amount has changed, post the prompt
@@ -108,9 +124,10 @@ class Twitch:
                 print('[!] Purrbot has detected a new donation!')
                 # create a string to post in channels
                 chat_string = 'NEW DONATION! {} has been raised! Visit: {} to donate!'.format(new_money_raised, CHARITY_URL)
-                for streamer in STREAMERS:
-                    channel = '#{}'.format(streamer)
-                    self.post_in_channel(channel, chat_string)
+                for streamers in (event_one_streamers, event_two_streamers):
+                    for streamer in streamers:
+                        channel = '#{}'.format(streamer)
+                        self.post_in_channel(channel, chat_string)
             # if not, check if cycle count has exceeded the amount required for a prompt
             elif self.prompt_cycles == CYCLES_FOR_PROMPT:
                 self.prompt_cycles = 0
@@ -125,24 +142,12 @@ class Twitch:
                 elif self.prompt_index == 2:
                     prompt_string = r'GGforCharity has raised: {} so far! Donate at: {}'.format(new_money_raised ,CHARITY_URL)
                 else:
-                    prompt_string = r''  # placeholder for more
+                    prompt_string = r''  # placeholder for more... TODO: current events, next events staring in XYZ hours?
                 # iterate prompt index and if > than limit, reset
                 self.prompt_index += 1
                 if self.prompt_index == 3:
                     self.prompt_index = 0
-                # get streamers from events, not a pre-defined list
-                current_event_data = event_tuple[0]
-                print('[+] Current event: ', current_event_data)
-                # change the text string into an iterable list
-                if not current_event_data[4] is None:
-                    event_one_streamers = current_event_data[4].split(',')
-                else:
-                    event_one_streamers = []
-                if not current_event_data[6] is None:
-                    event_two_streamers = current_event_data[6].split(',')
-                else:
-                    event_two_streamers = []
-                current_events = [(current_event_data[3], event_one_streamers), (current_event_data[5], event_two_streamers)]
+                # post per event and streamer
                 for subevent in current_events:
                     print('[+] Event: {} Streamers: {}'.format(subevent[0], subevent[1]))
                     for streamer in subevent[1]:
