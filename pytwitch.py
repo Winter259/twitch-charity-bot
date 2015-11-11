@@ -122,31 +122,25 @@ class Twitch:
             self.prompt_cycles += 1
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
             current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
-            for ongoing_event in current_event_data:
-                print('[+] Current ongoing event: {}'.format(ongoing_event))
-                # figure out if there are one or two
-
-            # change the text string into an iterable list
-            if not current_event_data[4] is None:
-                event_one_streamers = current_event_data[4].split(',')
-            else:
-                event_one_streamers = []
-            if not current_event_data[6] is None:
-                event_two_streamers = current_event_data[6].split(',')
-            else:
-                event_two_streamers = []
-            current_events = [(current_event_data[3], event_one_streamers), (current_event_data[5], event_two_streamers)]
-            # get donation amount
-            new_money_raised = get_donation_amount()
-            # if donation amount has changed, post the prompt
-            if not new_money_raised == current_money_raised:
+            new_money_raised = get_donation_amount()  # get donation amount
+            if not new_money_raised == current_money_raised:  # check if the amount has increased
+                current_money_raised = new_money_raised  # update the value
                 print('[!] Purrbot has detected a new donation!')
-                # create a string to post in channels
-                chat_string = 'NEW DONATION! {} has been raised! Visit: {} to donate!'.format(new_money_raised, CHARITY_URL)
-                for streamers in (event_one_streamers, event_two_streamers):
-                    for streamer in streamers:
-                        channel = '#{}'.format(streamer)
-                        self.post_in_channel(channel, chat_string)
+                # create the string to post to channels
+                chat_string = 'NEW DONATION! {} has been raised so far! Visit {} to donate!'.format(new_money_raised, CHARITY_URL)
+                # TODO: Try to scrape the amount that has been donated.
+                current_streamers = set()
+                for ongoing_event in current_event_data:
+                    for streamer in ongoing_event['Streamers']:
+                        current_streamers.add(streamer)  # use a set to avoid duplicates, just in case!
+                for streamer in current_streamers:
+                    channel = '#{}'.format(streamer)  # channel string is #<streamer name>
+                    self.post_in_channel(channel, chat_string)
+            else:  # if not, check if the amount of cycles has exceeded the amount required for a prompt
+                print_list('[+] Current ongoing events: {}', )
+                for ongoing_event in current_event_data:
+                    pass
+            """
             # if not, check if cycle count has exceeded the amount required for a prompt
             elif self.prompt_cycles == CYCLES_FOR_PROMPT:
                 self.prompt_cycles = 0
@@ -190,6 +184,7 @@ class Twitch:
                         channel = '#{}'.format(streamer)
                         self.post_in_channel(channel, prompt_string)
             # if not, wait for the amount of the check tick
+            """
             pause('[+] Holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
@@ -289,15 +284,20 @@ class Twitch:
             #print('Current: {} Start: {} End: {}'.format(current_time_epoch, event_start_time, event_end_time))
             if (current_time_epoch > event_start_time) and (current_time_epoch < event_end_time):
                 #print('It is a current event!')
+                if ',' in event[5]:  # this indicates that it should be a list
+                    streamers = event[5].split(',')
+                else:
+                    streamers = [event[5]]  # encapsulate in a list for easy iteration
                 current_event = {
                     'RowId': event[0],
                     'Day': event[1],
+                    'StartTime': event[2],
                     'EndTime': event[3],
-                    'EventOne': event[4],
-                    'StreamersOne': event[5],
-                    'EventTwo': event[6],
-                    'StreamersTwo': event[7]
+                    'Event': event[4],
+                    'Streamers': streamers
                 }
                 current_events.append(current_event)
         print_list('Current Events: ', current_events)
+        for event in current_events:
+            print('Streamers:', event['Streamers'])
         return current_events
