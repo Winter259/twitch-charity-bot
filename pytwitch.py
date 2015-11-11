@@ -142,14 +142,14 @@ class Twitch:
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''
                     if self.prompt_index == 0:  # money counter and schedule link
-                        prompt_string = r'GGforCharity has rasied: {} so far! Donate at: {} Check out the schedule at: {}'.format(
+                        prompt_string = r'[1] GGforCharity has rasied: {} so far! Donate at: {} Check out the schedule at: {}'.format(
                             new_money_raised,
                             CHARITY_URL,
                             SCHEDULE_URL
                         )
                     elif self.prompt_index == 1:  # current event prompt with kadgar links
                         print_list('[+] Current ongoing events: {}', current_event_data)
-                        prompt_string = r'Current GGforCharty streams: '
+                        prompt_string = r'[2] Current GGforCharty streams: '
                         for ongoing_event in current_event_data:
                             prompt_string += r'{}, watch at: {} '.format(
                                 ongoing_event['Event'],
