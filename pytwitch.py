@@ -153,8 +153,9 @@ class Twitch:
                         print_list('[+] Current ongoing events: {}', current_event_data)
                         prompt_string = r'[2] Current GGforCharity streams: '
                         for ongoing_event in current_event_data:
-                            prompt_string += r'{}, watch at: {} '.format(
+                            prompt_string += r'{}, {} (GMT), watch at: {} '.format(
                                 ongoing_event['Event'],
+                                ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                     # iterate prompt index and if > than limit, reset
