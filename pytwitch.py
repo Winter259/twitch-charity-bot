@@ -97,11 +97,8 @@ def get_amount_donated(old_amount='', new_amount=''):
     beep_loop(4, 500, 100)
     return amount_donated
 
-def get_current_epoch(roundNum=False):
-    current_time = time.mktime(datetime.now().timetuple())
-    if roundNum:
-        current_time = round(current_time, 0)
-    return int(current_time)
+def get_current_epoch():
+    return int(time.mktime(datetime.now().timetuple()))
 
 def get_time_passed():
     old_time = datetime(2015, 10, 14, 1, 00, 00)
@@ -289,7 +286,7 @@ class Twitch:
             return ()
 
     def get_current_events(self):
-        current_time_epoch = get_current_epoch(roundNum=True)
+        current_time_epoch = get_current_epoch()
         current_events = []
         all_event_data = self.get_db_data()
         for event in all_event_data:
@@ -311,7 +308,8 @@ class Twitch:
                     'Streamers': streamers
                 }
                 current_events.append(current_event)
-        print('[+] Current ongoing events:')
+        if len(current_events) > 0:
+            print('[+] Current ongoing events:')
         for event_data in current_events:
             print('\t> [{}] {} {} by {}'.format(event_data['RowId'], event_data['Day'], event_data['Event'], event_data['Streamers']))
         for event in current_events:
