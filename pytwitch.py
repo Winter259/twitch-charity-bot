@@ -280,36 +280,18 @@ class Twitch:
     def get_db_data(self):
         try:
             data = self.dbcur.execute('SELECT * FROM {}'.format(self.dbtable))
-            return data
+            data_list = []
+            for row in data_list:
+                data_list.append(row)
+            return data_list
         except Exception:
             print('[-] Purrbot was unable to interface with the database: ', Exception)
             return ()
 
-    def get_event_data(self):
-        db_events = self.get_db_data()
-        current_event = ()
-        events = []
-        events_left = []
-        for row in db_events:  # change from db cursor to iterable format
-            events.append(row)
-        for event in events:
-            if event[2] < get_current_epoch():
-                current_event = event  # will grab current event
-        # place remaining events in another list
-        for event in events:
-            if event[2] > get_current_epoch():
-                events_left.append(event)
-        #print_list('Events:', events_left)
-        #print('Current event:', current_event)
-        return current_event, events_left
-
     def get_current_events(self):
         current_time_epoch = get_current_epoch(roundNum=True)
-        db_events = self.get_db_data()
-        all_event_data = []
         current_events = []
-        for row in db_events:
-            all_event_data.append(row)
+        all_event_data = self.get_db_data()
         for event in all_event_data:
             event_start_time = event[2]
             event_end_time = event[3]
