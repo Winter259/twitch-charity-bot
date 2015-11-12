@@ -41,6 +41,8 @@ CYCLES_FOR_PROMPT = (15 * 60) / 5
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
+START_TIME_EPOCH = 1447372800
+END_TIME_EPOCH = 1447632000
 # MISC
 testing_mode = True
 # set global testing variables
@@ -108,6 +110,11 @@ def get_time_passed():
     hours_passed = round(((epoch_passed / 60) / 60), 1)
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
+
+def get_start_time_remaining():
+    time_left = (START_TIME_EPOCH - get_current_epoch())
+    time_left = time_left / 60 / 60 # convert to hours
+    return round(time_left, 2)
 
 def get_time_left(time_elapsed):
     time_left = round(72 - (time_elapsed), 1)
@@ -198,6 +205,12 @@ class Twitch:
                                 ongoing_event['Event'],
                                 ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
+                            )
+                        # if the stream has not started yet, generate a starting soon prompt instead
+                        if get_current_epoch() < START_TIME_EPOCH:
+                            prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {}'.format(
+                                get_start_time_remaining(),
+                                SCHEDULE_URL
                             )
                         for streamer in ongoing_event['Streamers']:
                             channel = '#{}'.format(streamer)
