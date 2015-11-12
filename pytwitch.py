@@ -5,6 +5,7 @@ from datetime import datetime
 from winsound import Beep
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
+from decimal import *  # used for typecasting the raised string
 from cfg import *
 
 # for testing:
@@ -46,16 +47,55 @@ testing_mode = True
 if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
     CYCLES_FOR_PROMPT = 3
+getcontext().prec = 3  # setting decimal places
+
+def beep_loop(number=0, frequency=200, length=100):
+    for i in range(0, number):
+        Beep(frequency, length)
 
 # global return functions
 
-def get_donation_amount():
-    print('[+] Purrbot is scraping the url...')
+def scrape_amount_raised():
+    print('[+] Purrbot is scraping {}'.format(CHARITY_URL))
     data = urlopen(CHARITY_URL).read()
     soup = BeautifulSoup(data, 'lxml')
     td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
     achieved_amount = td[0].text  # get just the text
     return achieved_amount
+
+def get_decimal_from_string(amount=''):
+    if amount == '':
+        print('[-] Empty string passed to the decimal from string converter')
+        return ''
+    decimal_req = ''
+    for letter in amount:
+        if letter == '.':
+            # print('Found a dot!')
+            decimal_req += '.'
+            continue
+        for number in range(0, 9):
+            if letter == str(number):
+                # print('Found the number: {}!'.format(letter))
+                decimal_req += letter
+                break
+    # print('Final string: {}'.format(decimal_req))
+    return Decimal(decimal_req)
+
+def get_amount_donated(old_amount='', new_amount=''):
+    if old_amount == '' or new_amount == '':
+        print('[-] An amount was not passed to the amount donated method')
+        return 0
+    # print('old: {} new: {}'.format(old_amount, new_amount))
+    old_amount_decimal = get_decimal_from_string(old_amount)
+    new_amount_decimal = get_decimal_from_string(new_amount)
+    if testing_mode:
+        print('[!] WARNING! Purrbot is in testing mode and is attempting to do 4.00 - 2.03!')
+        old_amount_decimal = Decimal('2.03')
+        new_amount_decimal = Decimal('4.00')
+    amount_donated = new_amount_decimal - old_amount_decimal
+    print('[+] New donation of: {}$'.format(amount_donated))
+    beep_loop(4, 500, 100)
+    return amount_donated
 
 def get_current_epoch(roundNum=False):
     current_time = time.mktime(datetime.now().timetuple())
@@ -118,21 +158,25 @@ class Twitch:
         """
 
     def run(self):
-        current_money_raised = get_donation_amount()  # Get the donation amount once before starting the loops, for comparison
+        current_money_raised = scrape_amount_raised()  # Get the donation amount once before starting the loops, for comparison
         while True:
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
             current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
-            new_money_raised = get_donation_amount()  # get donation amount
+            new_money_raised = scrape_amount_raised()  # get donation amount
             if not new_money_raised == current_money_raised:  # check if the amount has increased
+                new_donation = get_amount_donated(current_money_raised, new_money_raised)
                 current_money_raised = new_money_raised  # update the value
-                print('[!] Purrbot has detected a new donation!')
+                print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
-                chat_string = 'NEW DONATION! {} has been raised so far! Visit {} to donate!'.format(new_money_raised, CHARITY_URL)
-                # TODO: Try to scrape the amount that has been donated.
-                current_streamers = set()
+                chat_string = 'NEW DONATION OF {}$! A total of {}$ has been raised so far! Visit {} to donate!'.format(
+                    new_donation,
+                    new_money_raised,
+                    CHARITY_URL
+                )
+                current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
-                        current_streamers.add(streamer)  # use a set to avoid duplicates, just in case!
+                        current_streamers.add(streamer)
                 for streamer in current_streamers:
                     channel = '#{}'.format(streamer)  # channel string is #<streamer name>
                     self.post_in_channel(channel, chat_string)
@@ -223,7 +267,7 @@ class Twitch:
                 try:
                     self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                     print('[!] String posted successfully!')
-                    Beep(200, 100)
+                    beep_loop(2, 200, 100)
                     self.close_connection()
                     return True
                 except Exception as e:
@@ -285,7 +329,7 @@ class Twitch:
                     'Streamers': streamers
                 }
                 current_events.append(current_event)
-        print('Current Events:')
+        print('[+] Current ongoing events:')
         for event_data in current_events:
             print('\t> [{}] {} {} by {}'.format(event_data['RowId'], event_data['Day'], event_data['Event'], event_data['Streamers']))
         for event in current_events:
