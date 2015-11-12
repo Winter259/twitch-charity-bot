@@ -36,15 +36,15 @@ PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
-CHECK_TICK = 3  # seconds between checks
-CYCLES_FOR_PROMPT = (15 * 60) / 5
+CHECK_TICK = 2  # seconds between checks
+CYCLES_FOR_PROMPT = (15 * 60) / CHECK_TICK
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
 # MISC
-testing_mode = True
+testing_mode = False
 # set global testing variables
 if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
@@ -58,7 +58,7 @@ def beep_loop(number=0, frequency=200, length=100):
 # global return functions
 
 def scrape_amount_raised():
-    print('[+] Purrbot is scraping {}'.format(CHARITY_URL))
+    print('[+] Purrbot is scraping the charity URL')
     data = urlopen(CHARITY_URL).read()
     soup = BeautifulSoup(data, 'lxml')
     td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
@@ -172,7 +172,7 @@ class Twitch:
                 current_money_raised = new_money_raised  # update the value
                 print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
-                chat_string = 'NEW DONATION OF {}$! A total of {}$ has been raised so far! Visit {} to donate!'.format(
+                chat_string = 'NEW DONATION OF {}$! A total of {} has been raised so far! Visit {} to donate!'.format(
                     new_donation,
                     new_money_raised,
                     CHARITY_URL
@@ -208,9 +208,10 @@ class Twitch:
                             )
                         # if the stream has not started yet, generate a starting soon prompt instead
                         if get_current_epoch() < START_TIME_EPOCH:
-                            prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {}'.format(
+                            prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
                                 get_start_time_remaining(),
-                                SCHEDULE_URL
+                                SCHEDULE_URL,
+                                CHARITY_URL
                             )
                         for streamer in ongoing_event['Streamers']:
                             channel = '#{}'.format(streamer)
@@ -226,7 +227,7 @@ class Twitch:
                 else:
                     self.prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
             # wait the check tick regardless of what the bot does
-            print('[+] Next prompt in: {} cycles'.format(CYCLES_FOR_PROMPT - self.prompt_cycles + 1))  # +1 as is 0'd
+            print('[+] Next prompt in: {} cycles'.format(int(CYCLES_FOR_PROMPT - self.prompt_cycles + 1)))  # +1 as is 0'd
             pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
@@ -291,7 +292,7 @@ class Twitch:
         try:
             data = self.dbcur.execute('SELECT * FROM {}'.format(self.dbtable))
             data_list = []
-            for row in data_list:
+            for row in data:
                 data_list.append(row)
             return data_list
         except Exception:
@@ -324,7 +325,11 @@ class Twitch:
         if len(current_events) > 0:
             print('[+] Current ongoing events:')
         for event_data in current_events:
-            print('\t> [{}] {} {} by {}'.format(event_data['RowId'], event_data['Day'], event_data['Event'], event_data['Streamers']))
+            print('\t> [{}] {} {}'.format(
+                event_data['RowId'],
+                event_data['Day'],
+                event_data['Event']
+            ))
         for event in current_events:
             print_list('Current streamers:', event['Streamers'])
         return current_events
