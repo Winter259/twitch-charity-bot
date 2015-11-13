@@ -1,9 +1,10 @@
 import socket
 import sqlite3
 import time
+import os
+import urllib.request
 from datetime import datetime
 from winsound import Beep
-from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from cfg import *
 
@@ -21,7 +22,6 @@ def pause(prompt='', amount=5):
         time.sleep(1)
         ticks -= 1
     print('                                                            ', end='\r')  # clear line completely
-    # print('[+] Pause ended, continuing now!')
 
 
 def print_list(prompt='', list_to_print=[]):
@@ -63,7 +63,12 @@ def beep_loop(number=0, frequency=200, length=100):
 def scrape_amount_raised():
     try:
         print('[+] Purrbot is scraping the charity URL')
-        data = urlopen(CHARITY_URL).read()
+        """
+        conn = urlopen(CHARITY_URL)
+        data = conn.read()
+        """
+        with urllib.request.urlopen(CHARITY_URL) as response:
+            data = response.read()
         soup = BeautifulSoup(data, 'lxml')
         td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
         achieved_amount = td[0].text  # get just the text
@@ -104,7 +109,8 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    beep_loop(4, 500, 100)
+    os.startfile('chewbacca2.mp3')
+    #beep_loop(4, 500, 100)
     return amount_donated
 
 
@@ -307,6 +313,7 @@ class Twitch:
                 try:
                     self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                     print('[!] String posted successfully!')
+                    # os.startfile('chewbacca.mp3')
                     beep_loop(2, 200, 100)
                     self.close_connection()
                     return True
