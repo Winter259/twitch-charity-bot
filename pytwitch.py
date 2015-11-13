@@ -257,7 +257,11 @@ class Twitch:
                 else:
                     self.prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
             # wait the check tick regardless of what the bot does
-            print('[+] Next prompt in: {} cycles'.format(int(CYCLES_FOR_PROMPT - self.prompt_cycles + 1)))  # +1 as is 0'd
+            prompt_cycles_left = int(CYCLES_FOR_PROMPT - self.prompt_cycles + 1)
+            print('[+] Next prompt in: {} cycles, {} minutes'.format(
+                prompt_cycles_left,
+                round((prompt_cycles_left / 60) * CHECK_TICK, 1)
+            ))  # +1 as is 0'd
             pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
