@@ -60,6 +60,17 @@ def beep_loop(number=0, frequency=200, length=100):
 # global return functions
 
 
+def create_url_request():
+    request = urllib.request.Request(
+        CHARITY_URL,
+        data=None,
+        headers={
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+        }
+    )
+    return request
+
+
 def scrape_amount_raised():
     try:
         print('[+] Purrbot is scraping the charity URL')
@@ -67,8 +78,13 @@ def scrape_amount_raised():
         conn = urlopen(CHARITY_URL)
         data = conn.read()
         """
+        """
         with urllib.request.urlopen(CHARITY_URL) as response:
             data = response.read()
+        """
+        url_request = create_url_request()
+        f = urllib.request.urlopen(url_request)
+        data = f.read().decode('utf-8')
         soup = BeautifulSoup(data, 'lxml')
         td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
         achieved_amount = td[0].text  # get just the text
