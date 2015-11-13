@@ -18,7 +18,7 @@ data = dbcur.execute('SELECT * FROM {}'.format(table_name))
 for row in data:
     print('\t', row)
 print('Dropping table: ', table_name)
-dbcur.execute('DROP TABLE {}'.format(table_name, table_name))
+dbcur.execute('DROP TABLE {}'.format(table_name))
 print('Creating table: ', table_name)
 dbcur.execute(
     'CREATE TABLE "testing" ('
