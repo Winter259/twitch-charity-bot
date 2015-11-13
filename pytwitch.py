@@ -36,7 +36,7 @@ PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
-CHECK_TICK = 2  # seconds between checks
+CHECK_TICK = 5  # seconds between checks
 PROMPT_TICK_MINUTES = 10
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 # Stream specific
