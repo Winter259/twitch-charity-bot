@@ -246,8 +246,8 @@ class Twitch:
                                 SCHEDULE_URL
                             )
                         elif self.prompt_index == 1:  # current event prompt with kadgar links
-                            prompt_string = r'Current GGforCharity events: '
-                            prompt_string += r'Event {}: {}, {} (GMT), watch at: {}  '.format(
+                            prompt_string = r'Current GGforCharity event: '
+                            prompt_string += r'{}: {}, {} (GMT), watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
                                 ongoing_event['Day'],
