@@ -29,7 +29,7 @@ def print_list(prompt='', list_to_print=[]):
     else:
         print('[+] {}'.format(prompt))
         for element in list_to_print:
-            print('\t\t> {}'.format(element))
+            print('\t> {}'.format(element))
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
@@ -39,7 +39,7 @@ GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stre
 CHECK_TICK = 2  # seconds between checks
 CYCLES_FOR_PROMPT = (15 * 60) / CHECK_TICK
 # Stream specific
-CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11324&mid=8'
+CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
@@ -51,11 +51,13 @@ if testing_mode:
     CYCLES_FOR_PROMPT = 3
 getcontext().prec = 3  # setting decimal places
 
+
 def beep_loop(number=0, frequency=200, length=100):
     for i in range(0, number):
         Beep(frequency, length)
 
 # global return functions
+
 
 def scrape_amount_raised():
     print('[+] Purrbot is scraping the charity URL')
@@ -63,7 +65,9 @@ def scrape_amount_raised():
     soup = BeautifulSoup(data, 'lxml')
     td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
     achieved_amount = td[0].text  # get just the text
+    print('[+] Current amount:', achieved_amount)
     return achieved_amount
+
 
 def get_decimal_from_string(amount=''):
     if amount == '':
@@ -74,14 +78,15 @@ def get_decimal_from_string(amount=''):
         if letter == '.':
             # print('Found a dot!')
             decimal_req += '.'
-            continue
+            # continue
         for number in range(0, 9):
             if letter == str(number):
                 # print('Found the number: {}!'.format(letter))
                 decimal_req += letter
-                break
+                # break
     # print('Final string: {}'.format(decimal_req))
     return Decimal(decimal_req)
+
 
 def get_amount_donated(old_amount='', new_amount=''):
     if old_amount == '' or new_amount == '':
@@ -99,8 +104,10 @@ def get_amount_donated(old_amount='', new_amount=''):
     beep_loop(4, 500, 100)
     return amount_donated
 
+
 def get_current_epoch():
     return int(time.mktime(datetime.now().timetuple()))
+
 
 def get_time_passed():
     old_time = datetime(2015, 10, 14, 1, 00, 00)
@@ -111,20 +118,24 @@ def get_time_passed():
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
 
+
 def get_start_time_remaining():
     time_left = (START_TIME_EPOCH - get_current_epoch())
     time_left = time_left / 60 / 60 # convert to hours
     return round(time_left, 2)
+
 
 def get_time_left(time_elapsed):
     time_left = round(72 - (time_elapsed), 1)
     # print('Time left: {}'.format(time_left))
     return time_left
 
+
 def get_percentage_left():
     hours_passed = get_time_passed()
     percentage_done = round((hours_passed / 72) * 100, 1)
     return percentage_done
+
 
 def return_kadgar_link(streamer_list=[]):
     if len(streamer_list) == 0:
@@ -139,6 +150,7 @@ def return_kadgar_link(streamer_list=[]):
     for streamer in streamer_list:
         kadgar_link += '/' + streamer
     return kadgar_link
+
 
 class Twitch:
     def __init__(self, name='', token='', channel=''):
@@ -172,11 +184,13 @@ class Twitch:
                 current_money_raised = new_money_raised  # update the value
                 print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
-                chat_string = 'NEW DONATION OF {}$! A total of {} has been raised so far! Visit {} to donate!'.format(
+                chat_string = 'NEW DONATION OF ${} CAD! A total of {} has been raised so far! Visit {} to donate!'.format(
                     new_donation,
                     new_money_raised,
                     CHARITY_URL
                 )
+                # record the donation in the db for future data visualisation
+                self.record_donation(str(new_donation), new_money_raised)
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
@@ -193,13 +207,13 @@ class Twitch:
                     print_list('Current ongoing events: {}', current_event_data)
                     for ongoing_event in current_event_data:
                         if self.prompt_index == 0:  # money counter and schedule link
-                            prompt_string = r'[1] GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
+                            prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
                                 new_money_raised,
                                 CHARITY_URL,
                                 SCHEDULE_URL
                             )
                         elif self.prompt_index == 1:  # current event prompt with kadgar links
-                            prompt_string = r'[2] Current GGforCharity streams: '
+                            prompt_string = r'Current GGforCharity events: '
                             prompt_string += r'Event {}: {}, {} (GMT), watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
@@ -333,3 +347,12 @@ class Twitch:
         for event in current_events:
             print_list('Current streamers:', event['Streamers'])
         return current_events
+
+    def record_donation(self, amount_donated='', total_raised=''):
+        try:
+            current_time_epoch = get_current_epoch()
+            self.dbcur.execute('INSERT INTO donations VALUES (NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
+            self.dbcon.commit()
+            print('[+] Purrbot has recorded a donation!')
+        except Exception:
+            print('[-] Purrbot did not manage to record the donation: {}'.format(Exception))
