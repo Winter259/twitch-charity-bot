@@ -60,12 +60,16 @@ def beep_loop(number=0, frequency=200, length=100):
 
 
 def scrape_amount_raised():
-    print('[+] Purrbot is scraping the charity URL')
-    data = urlopen(CHARITY_URL).read()
-    soup = BeautifulSoup(data, 'lxml')
-    td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
-    achieved_amount = td[0].text  # get just the text
-    print('[+] Current amount:', achieved_amount)
+    try:
+        print('[+] Purrbot is scraping the charity URL')
+        data = urlopen(CHARITY_URL).read()
+        soup = BeautifulSoup(data, 'lxml')
+        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
+        achieved_amount = td[0].text  # get just the text
+        print('[+] Current amount:', achieved_amount)
+    except Exception:
+        print('[-] Purrbout could not scrape the amount: {}'.format(Exception))
+        return ''
     return achieved_amount
 
 
@@ -100,9 +104,13 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_decimal = Decimal('2.03')
         new_amount_decimal = Decimal('4.00')
     amount_donated = new_amount_decimal - old_amount_decimal
-    print('[+] New donation of: {}$'.format(amount_donated))
+    print('[+] New donation of: {} - {} = {}$'.format(
+        str(new_amount_decimal),
+        str(old_amount_decimal),
+        str(amount_donated)
+    ))
     beep_loop(4, 500, 100)
-    return amount_donated
+    return str(amount_donated)
 
 
 def get_current_epoch():
@@ -179,18 +187,25 @@ class Twitch:
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
             current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
             new_money_raised = scrape_amount_raised()  # get donation amount
-            if not new_money_raised == current_money_raised:  # check if the amount has increased
-                new_donation = get_amount_donated(current_money_raised, new_money_raised)
+            if not new_money_raised == current_money_raised and not new_money_raised == '':  # check if the amount has increased
+                # new_donation = get_amount_donated(current_money_raised, new_money_raised) # TODO: typecast to ints
                 current_money_raised = new_money_raised  # update the value
-                print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
+                print('[!] Purrbot has detected a new donation!')
+                # print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
+                """
                 chat_string = 'NEW DONATION OF ${} CAD! A total of {} has been raised so far! Visit {} to donate!'.format(
                     new_donation,
                     new_money_raised,
                     CHARITY_URL
                 )
+                """
+                chat_string = 'NEW DONATION! A total of {} has been raised to far! Visit {} to donate!'.format(
+                    new_money_raised,
+                    CHARITY_URL
+                )
                 # record the donation in the db for future data visualisation
-                self.record_donation(str(new_donation), new_money_raised)
+                self.record_donation('', new_money_raised)
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
