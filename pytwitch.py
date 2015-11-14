@@ -6,28 +6,8 @@ import urllib.request
 from datetime import datetime
 from winsound import Beep
 from bs4 import BeautifulSoup
+from purrtools import *
 from cfg import *
-
-# misc functions
-
-
-def pause(prompt='', amount=5):
-    ticks = amount
-    print(prompt)
-    while ticks > 0:
-        print('[*] Pause ends in: {}  '.format(ticks), end='\r')
-        time.sleep(1)
-        ticks -= 1
-    print('                                                            ', end='\r')  # clear line completely
-
-
-def print_list(prompt='', list_to_print=[]):
-    if len(list_to_print) == 0:
-        print('[-] Attempted to print an empty list!')
-    else:
-        print('[+] {}'.format(prompt))
-        for element in list_to_print:
-            print('\t> {}'.format(element))
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
@@ -71,14 +51,6 @@ def create_url_request():
 def scrape_amount_raised():
     try:
         print('[+] Purrbot is scraping the charity URL')
-        """
-        conn = urlopen(CHARITY_URL)
-        data = conn.read()
-        """
-        """
-        with urllib.request.urlopen(CHARITY_URL) as response:
-            data = response.read()
-        """
         url_request = create_url_request()
         f = urllib.request.urlopen(url_request)
         data = f.read().decode('utf-8')
