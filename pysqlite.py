@@ -21,25 +21,25 @@ class Pysqlite:
 
     def get_db_data(self, table):
         try:
-            data = self.dbcur.execute('SELECT * FROM {}'.format(table))
+            db_data = self.dbcur.execute('SELECT * FROM {}'.format(table))
         except Exception as e:
             raise PysqliteError('Pysqlite experienced the following exception: {}'.format(e))
         data_list = []
-        for row in data:
+        for row in db_data:
             data_list.append(row)
         if len(data_list) == 0:
             raise PysqliteError('Pysqlite found no data in the table: {} in the DB: {}'.format(table, self.dbname))
         return data_list
 
-    def insert_db_data(self, table, row_string, data):
+    def insert_db_data(self, table, row_string, db_data):
         try:
-            self.dbcur.execute('INSERT INTO {} VALUES {}'.format(table, row_string), data)
+            self.dbcur.execute('INSERT INTO {} VALUES {}'.format(table, row_string), db_data)
             self.dbcon.commit()
         except Exception as e:
             raise PysqliteError('Pysqlite experienced the following exception: {}'.format(e))
 
 if __name__ == '__main__':
-    ggforcharity_db = Pysqlite('GGforCharity' ,'ggforcharity.db')
+    ggforcharity_db = Pysqlite('GGforCharity', 'ggforcharity.db')
     data = ggforcharity_db.get_db_data('testing')
     for row in data:
         print(row)
