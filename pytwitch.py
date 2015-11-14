@@ -1,6 +1,4 @@
 import socket
-import sqlite3
-import time
 import pysqlite
 import os
 import urllib.request
