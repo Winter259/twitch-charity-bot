@@ -97,16 +97,6 @@ def get_amount_donated(old_amount='', new_amount=''):
     return amount_donated
 
 
-def get_time_passed():
-    old_time = datetime(2015, 10, 14, 1, 00, 00)
-    epoch_old = time.mktime(old_time.timetuple())
-    # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
-    epoch_passed = get_current_time('epoch') - epoch_old
-    hours_passed = round(((epoch_passed / 60) / 60), 1)
-    # print('\tHours passed: {}'.format(hours_passed))
-    return hours_passed
-
-
 def get_start_time_remaining():
     time_left = (START_TIME_EPOCH - get_current_time('epoch'))
     time_left = time_left / 60 / 60 # convert to hours
@@ -117,12 +107,6 @@ def get_time_left(time_elapsed):
     time_left = round(72 - (time_elapsed), 1)
     # print('Time left: {}'.format(time_left))
     return time_left
-
-
-def get_percentage_left():
-    hours_passed = get_time_passed()
-    percentage_done = round((hours_passed / 72) * 100, 1)
-    return percentage_done
 
 
 def return_kadgar_link(streamer_list=[]):

@@ -36,8 +36,23 @@ def get_current_time(return_type='epoch'):
         print_with_prepend('[-] ', 'No time return type requested')
 
 
+def get_time_elapsed(new_time, old_time, return_type='hours', round_amount=2):
+    if type(new_time) == datetime:
+        new_time = mktime(new_time.timetuple())
+    if type(old_time) == datetime:
+        old_time = mktime(old_time.timetuple())
+    epoch_passed = new_time - old_time
+    if return_type == 'hours':
+        epoch_passed = (epoch_passed / 60) / 60
+    elif return_type == 'minutes':
+        epoch_passed /= 60
+    return round(epoch_passed, round_amount)
+
+
+
 if __name__ == '__main__':
     pause('Testing pause', 2)
     test_list = ['hello', 'my', 'name', 'is', 'simon']
     print_list('Testing list printing:', test_list)
-    print('Current time epoch: {} Current timestamp: {}'.format(get_current_time('epoch'), get_current_time('timestamp')))
+    print('Epoch: {} Timestamp: {}'.format(get_current_time('epoch'), get_current_time('timestamp')))
+    get_time_elapsed(datetime(2015, 10, 14, 1, 00, 00), 0)
