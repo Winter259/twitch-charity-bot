@@ -1,11 +1,10 @@
-import sqlite3
+import pysqlite
 import time
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-dbcon = sqlite3.connect('ggforcharity.db')
-dbcur = dbcon.cursor()
-data = dbcur.execute('SELECT * FROM donations')
+database = pysqlite.Pysqlite('GGforCharity DB', 'ggforcharity.db')
+data = database.get_db_data('donations')
 
 data_list = []
 for row in data:
