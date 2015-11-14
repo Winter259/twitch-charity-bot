@@ -206,7 +206,7 @@ class Twitch:
                 prompt_cycles_left,
                 round((prompt_cycles_left / 60) * CHECK_TICK, 1)
             ))  # +1 as is 0'd
-            pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
+            pause('Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
     def connect(self, channel=''):
@@ -228,7 +228,7 @@ class Twitch:
 
     def close_connection(self):
         self.connection.close()
-        pause('[+] Holding for disconnect', 3)
+        pause('Holding for disconnect', 3)
 
     def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')
