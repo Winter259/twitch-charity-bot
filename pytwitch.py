@@ -62,7 +62,7 @@ def create_url_request():
         CHARITY_URL,
         data=None,
         headers={
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
         }
     )
     return request
@@ -87,7 +87,7 @@ def scrape_amount_raised():
         achieved_amount = td[0].text  # get just the text
         print('[+] Current amount:', achieved_amount)
     except Exception:
-        print('[-] Purrbout could not scrape the amount: {}'.format(Exception))
+        print('[-] Purrbot could not scrape the amount: {}'.format(Exception))
         return ''
     return achieved_amount
 
@@ -122,7 +122,7 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    os.startfile('chewbacca2.mp3')
+    os.startfile('chewbacca.mp3')
     #beep_loop(4, 500, 100)
     return amount_donated
 
@@ -234,7 +234,6 @@ class Twitch:
                     self.prompt_cycles = 0  # reset this counter for the cycle to reset
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''
-                    print_list('Current ongoing events: {}', current_event_data)
                     for ongoing_event in current_event_data:
                         if self.prompt_index == 0:  # money counter and schedule link
                             prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
@@ -243,7 +242,7 @@ class Twitch:
                                 SCHEDULE_URL
                             )
                         elif self.prompt_index == 1:  # current event prompt with kadgar links
-                            prompt_string = r'Current GGforCharity event: '
+                            prompt_string = r'GGforCharity Schedule: {} Current GGforCharity events: '.format(SCHEDULE_URL)
                             prompt_string += r'{}: {}, {} (GMT), watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
@@ -373,14 +372,14 @@ class Twitch:
                 current_events.append(current_event)
         if len(current_events) > 0:
             print('[+] Current ongoing events:')
-        for event_data in current_events:
+        for event in current_events:
             print('\t> [{}] {} {}'.format(
-                event_data['RowId'],
-                event_data['Day'],
-                event_data['Event']
+                event['RowId'],
+                event['Day'],
+                event['Event']
             ))
         for event in current_events:
-            print_list('Current streamers:', event['Streamers'])
+            print_list('Streamers:', event['Streamers'])
         return current_events
 
     def record_donation(self, amount_donated='', total_raised=''):
