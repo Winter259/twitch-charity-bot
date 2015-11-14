@@ -8,9 +8,6 @@ from winsound import Beep
 from bs4 import BeautifulSoup
 from cfg import *
 
-# for testing:
-# kadgar.net/live/purrcat259/purrbot359
-
 # misc functions
 
 
@@ -38,7 +35,7 @@ DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
 CHECK_TICK = 5  # seconds between checks
-PROMPT_TICK_MINUTES = 10
+PROMPT_TICK_MINUTES = 15
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
