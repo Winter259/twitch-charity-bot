@@ -147,12 +147,6 @@ class Twitch:
                     new_money_raised,
                     CHARITY_URL
                 )
-                """
-                chat_string = 'NEW DONATION! A total of {} has been raised to far! Visit {} to donate!'.format(
-                    new_money_raised,
-                    CHARITY_URL
-                )
-                """
                 # record the donation in the db for future data visualisation
                 self.record_donation(str(new_donation), new_money_raised)
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
