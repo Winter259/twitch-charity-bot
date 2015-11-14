@@ -30,3 +30,10 @@ class Pysqlite:
         if len(data_list) == 0:
             raise PysqliteError('Pysqlite found no data in the table: {}'.format(table))
         return data_list
+
+    def insert_db_data(self, table, row_string, data):
+        try:
+            self.dbcur.execute('INSERT INTO {} VALUES {}'.format(table, row_string), data)
+            self.dbcon.commit()
+        except Exception as e:
+            raise PysqliteError('Pysqlite experienced the following exception: {}'.format(e))
