@@ -49,10 +49,9 @@ def get_time_elapsed(new_time, old_time, return_type='hours', round_amount=2):
     return round(epoch_passed, round_amount)
 
 
-
 if __name__ == '__main__':
     pause('Testing pause', 2)
     test_list = ['hello', 'my', 'name', 'is', 'simon']
     print_list('Testing list printing:', test_list)
     print('Epoch: {} Timestamp: {}'.format(get_current_time('epoch'), get_current_time('timestamp')))
-    get_time_elapsed(datetime(2015, 10, 14, 1, 00, 00), 0)
+    print('Time elapsed from 01/01/70 00:00 to now: {}'.format(get_time_elapsed(get_current_time('epoch'), 0, 'seconds')))
