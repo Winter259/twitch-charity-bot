@@ -1,6 +1,7 @@
 import socket
 import sqlite3
 import time
+import pysqlite
 import os
 import urllib.request
 from winsound import Beep
@@ -97,18 +98,6 @@ def get_amount_donated(old_amount='', new_amount=''):
     return amount_donated
 
 
-def get_start_time_remaining():
-    time_left = (START_TIME_EPOCH - get_current_time('epoch'))
-    time_left = time_left / 60 / 60 # convert to hours
-    return round(time_left, 2)
-
-
-def get_time_left(time_elapsed):
-    time_left = round(72 - (time_elapsed), 1)
-    # print('Time left: {}'.format(time_left))
-    return time_left
-
-
 def return_kadgar_link(streamer_list=[]):
     if len(streamer_list) == 0:
         print('[-] No streamers passed to the kadgar link generator!')
@@ -133,8 +122,7 @@ class Twitch:
         self.cycle_count = 0
         self.prompt_index = 0  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
-        self.dbcon = sqlite3.connect('ggforcharity.db')
-        self.dbcur = self.dbcon.cursor()
+        self.db = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
         if testing_mode:
             self.dbtable = 'testing'
         else:
@@ -200,12 +188,14 @@ class Twitch:
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                         # if the stream has not started yet, generate a starting soon prompt instead
+                        """
                         if get_current_time('epoch') < START_TIME_EPOCH:
                             prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
                                 get_start_time_remaining(),
                                 SCHEDULE_URL,
                                 CHARITY_URL
                             )
+                        """
                         for streamer in ongoing_event['Streamers']:
                             channel = '#{}'.format(streamer)
                             self.post_in_channel(channel, prompt_string)
@@ -284,23 +274,10 @@ class Twitch:
                     self.close_connection()
                     return False
 
-    # db return functions
-
-    def get_db_data(self):
-        try:
-            data = self.dbcur.execute('SELECT * FROM {}'.format(self.dbtable))
-            data_list = []
-            for row in data:
-                data_list.append(row)
-            return data_list
-        except Exception:
-            print('[-] Purrbot was unable to interface with the database: ', Exception)
-            return ()
-
     def get_current_events(self):
         current_time_epoch = get_current_time('epoch')
         current_events = []
-        all_event_data = self.get_db_data()
+        all_event_data = self.db.get_db_data(self.dbtable)
         for event in all_event_data:
             event_start_time = event[2]
             event_end_time = event[3]
@@ -335,8 +312,7 @@ class Twitch:
     def record_donation(self, amount_donated='', total_raised=''):
         try:
             current_time_epoch = get_current_time('epoch')
-            self.dbcur.execute('INSERT INTO donations VALUES (NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
-            self.dbcon.commit()
+            self.db.insert_db_data(self.dbtable, '(NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
             print('[+] Purrbot has recorded a donation!')
-        except Exception:
-            print('[-] Purrbot did not manage to record the donation: {}'.format(Exception))
+        except Exception as e:
+            print('[-] Purrbot did not manage to record the donation: {}'.format(e))
