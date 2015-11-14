@@ -1,33 +1,11 @@
 import socket
-import sqlite3
-import time
-import os
+import pysqlite
 import urllib.request
-from datetime import datetime
+from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
+from purrtools import print_list, get_current_time, pause
 from cfg import *
-
-# misc functions
-
-
-def pause(prompt='', amount=5):
-    ticks = amount
-    print(prompt)
-    while ticks > 0:
-        print('[*] Pause ends in: {}  '.format(ticks), end='\r')
-        time.sleep(1)
-        ticks -= 1
-    print('                                                            ', end='\r')  # clear line completely
-
-
-def print_list(prompt='', list_to_print=[]):
-    if len(list_to_print) == 0:
-        print('[-] Attempted to print an empty list!')
-    else:
-        print('[+] {}'.format(prompt))
-        for element in list_to_print:
-            print('\t> {}'.format(element))
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
@@ -37,13 +15,16 @@ GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stre
 CHECK_TICK = 5  # seconds between checks
 PROMPT_TICK_MINUTES = 15
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
+
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
+
 # MISC
 testing_mode = False
+
 # set global testing variables
 if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
@@ -53,8 +34,6 @@ if testing_mode:
 def beep_loop(number=0, frequency=200, length=100):
     for i in range(0, number):
         Beep(frequency, length)
-
-# global return functions
 
 
 def create_url_request():
@@ -71,14 +50,6 @@ def create_url_request():
 def scrape_amount_raised():
     try:
         print('[+] Purrbot is scraping the charity URL')
-        """
-        conn = urlopen(CHARITY_URL)
-        data = conn.read()
-        """
-        """
-        with urllib.request.urlopen(CHARITY_URL) as response:
-            data = response.read()
-        """
         url_request = create_url_request()
         f = urllib.request.urlopen(url_request)
         data = f.read().decode('utf-8')
@@ -122,41 +93,8 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    os.startfile('chewbacca.mp3')
-    #beep_loop(4, 500, 100)
+    startfile('chewbacca.mp3')
     return amount_donated
-
-
-def get_current_epoch():
-    return int(time.mktime(datetime.now().timetuple()))
-
-
-def get_time_passed():
-    old_time = datetime(2015, 10, 14, 1, 00, 00)
-    epoch_old = time.mktime(old_time.timetuple())
-    # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
-    epoch_passed = get_current_epoch() - epoch_old
-    hours_passed = round(((epoch_passed / 60) / 60), 1)
-    # print('\tHours passed: {}'.format(hours_passed))
-    return hours_passed
-
-
-def get_start_time_remaining():
-    time_left = (START_TIME_EPOCH - get_current_epoch())
-    time_left = time_left / 60 / 60 # convert to hours
-    return round(time_left, 2)
-
-
-def get_time_left(time_elapsed):
-    time_left = round(72 - (time_elapsed), 1)
-    # print('Time left: {}'.format(time_left))
-    return time_left
-
-
-def get_percentage_left():
-    hours_passed = get_time_passed()
-    percentage_done = round((hours_passed / 72) * 100, 1)
-    return percentage_done
 
 
 def return_kadgar_link(streamer_list=[]):
@@ -183,8 +121,7 @@ class Twitch:
         self.cycle_count = 0
         self.prompt_index = 0  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
-        self.dbcon = sqlite3.connect('ggforcharity.db')
-        self.dbcur = self.dbcon.cursor()
+        self.db = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
         if testing_mode:
             self.dbtable = 'testing'
         else:
@@ -204,7 +141,6 @@ class Twitch:
             if not new_money_raised == current_money_raised and not new_money_raised == '':  # check if the amount has increased
                 new_donation = get_amount_donated(current_money_raised, new_money_raised)
                 current_money_raised = new_money_raised  # update the value
-                # print('[!] Purrbot has detected a new donation!')
                 print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
                 chat_string = 'NEW DONATION OF ${} CAD! A total of {} has been raised so far! Visit {} to donate!'.format(
@@ -212,15 +148,8 @@ class Twitch:
                     new_money_raised,
                     CHARITY_URL
                 )
-                """
-                chat_string = 'NEW DONATION! A total of {} has been raised to far! Visit {} to donate!'.format(
-                    new_money_raised,
-                    CHARITY_URL
-                )
-                """
                 # record the donation in the db for future data visualisation
                 self.record_donation(str(new_donation), new_money_raised)
-                # self.record_donation('', new_money_raised)
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
@@ -242,7 +171,7 @@ class Twitch:
                                 SCHEDULE_URL
                             )
                         elif self.prompt_index == 1:  # current event prompt with kadgar links
-                            prompt_string = r'GGforCharity Schedule: {} Current GGforCharity events: '.format(SCHEDULE_URL)
+                            prompt_string = r'Full GGforCharity Schedule: {} Current event: '.format(SCHEDULE_URL)
                             prompt_string += r'{}: {}, {} (GMT), watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
@@ -250,12 +179,14 @@ class Twitch:
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                         # if the stream has not started yet, generate a starting soon prompt instead
-                        if get_current_epoch() < START_TIME_EPOCH:
+                        """
+                        if get_current_time('epoch') < START_TIME_EPOCH:
                             prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
                                 get_start_time_remaining(),
                                 SCHEDULE_URL,
                                 CHARITY_URL
                             )
+                        """
                         for streamer in ongoing_event['Streamers']:
                             channel = '#{}'.format(streamer)
                             self.post_in_channel(channel, prompt_string)
@@ -275,7 +206,7 @@ class Twitch:
                 prompt_cycles_left,
                 round((prompt_cycles_left / 60) * CHECK_TICK, 1)
             ))  # +1 as is 0'd
-            pause('[+] Purrbot is holding for next cycle', CHECK_TICK)
+            pause('Purrbot is holding for next cycle', CHECK_TICK)
             self.cycle_count += 1
 
     def connect(self, channel=''):
@@ -297,7 +228,7 @@ class Twitch:
 
     def close_connection(self):
         self.connection.close()
-        pause('[+] Holding for disconnect', 3)
+        pause('Holding for disconnect', 3)
 
     def receive_data(self, buffer=DATA_BUFFER_SIZE):
         print('[+] Purrbot is waiting for data to come in from the stream')
@@ -334,23 +265,10 @@ class Twitch:
                     self.close_connection()
                     return False
 
-    # db return functions
-
-    def get_db_data(self):
-        try:
-            data = self.dbcur.execute('SELECT * FROM {}'.format(self.dbtable))
-            data_list = []
-            for row in data:
-                data_list.append(row)
-            return data_list
-        except Exception:
-            print('[-] Purrbot was unable to interface with the database: ', Exception)
-            return ()
-
     def get_current_events(self):
-        current_time_epoch = get_current_epoch()
+        current_time_epoch = get_current_time('epoch')
         current_events = []
-        all_event_data = self.get_db_data()
+        all_event_data = self.db.get_db_data(self.dbtable)
         for event in all_event_data:
             event_start_time = event[2]
             event_end_time = event[3]
@@ -384,9 +302,8 @@ class Twitch:
 
     def record_donation(self, amount_donated='', total_raised=''):
         try:
-            current_time_epoch = get_current_epoch()
-            self.dbcur.execute('INSERT INTO donations VALUES (NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
-            self.dbcon.commit()
+            current_time_epoch = get_current_time('epoch')
+            self.db.insert_db_data(self.dbtable, '(NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
             print('[+] Purrbot has recorded a donation!')
-        except Exception:
-            print('[-] Purrbot did not manage to record the donation: {}'.format(Exception))
+        except Exception as e:
+            print('[-] Purrbot did not manage to record the donation: {}'.format(e))
