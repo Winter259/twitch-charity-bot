@@ -142,7 +142,6 @@ class Twitch:
             if not new_money_raised == current_money_raised and not new_money_raised == '':  # check if the amount has increased
                 new_donation = get_amount_donated(current_money_raised, new_money_raised)
                 current_money_raised = new_money_raised  # update the value
-                # print('[!] Purrbot has detected a new donation!')
                 print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
                 # create the string to post to channels
                 chat_string = 'NEW DONATION OF ${} CAD! A total of {} has been raised so far! Visit {} to donate!'.format(
@@ -158,7 +157,6 @@ class Twitch:
                 """
                 # record the donation in the db for future data visualisation
                 self.record_donation(str(new_donation), new_money_raised)
-                # self.record_donation('', new_money_raised)
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
