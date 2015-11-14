@@ -4,7 +4,7 @@ import urllib.request
 from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
-from purrtools import *
+from purrtools import print_list, get_current_time, pause
 from cfg import *
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
