@@ -150,6 +150,7 @@ class Twitch:
                 )
                 # record the donation in the db for future data visualisation
                 self.record_donation(str(new_donation), new_money_raised)
+                # create a set of all streamers across all events
                 current_streamers = set()  # use a set to avoid duplicates, just in case!
                 for ongoing_event in current_event_data:
                     for streamer in ongoing_event['Streamers']:
@@ -161,35 +162,43 @@ class Twitch:
                 if self.prompt_cycles == CYCLES_FOR_PROMPT:
                     print('[+] Purrbot is going to post a prompt!')
                     self.prompt_cycles = 0  # reset this counter for the cycle to reset
-                    # now we decide which chat string to post, round robin between a set number
-                    prompt_string = ''
+                    # make list of all the streamers
+                    streamer_list = []
                     for ongoing_event in current_event_data:
-                        if self.prompt_index == 0:  # money counter and schedule link
-                            prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
-                                new_money_raised,
-                                CHARITY_URL,
-                                SCHEDULE_URL
-                            )
-                        elif self.prompt_index == 1:  # current event prompt with kadgar links
-                            prompt_string = r'Full GGforCharity Schedule: {} Current event: '.format(SCHEDULE_URL)
-                            prompt_string += r'{}: {}, {} (GMT), watch at: {}  '.format(
+                        for streamer in ongoing_event['Streamers']:
+                            streamer_list.append(streamer)
+                    # now we decide which chat string to post, round robin between a set number
+                    prompt_string = ''  # declare the string
+                    if self.prompt_index == 0:  # money and schedule link
+                        prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
+                            new_money_raised,
+                            CHARITY_URL,
+                            SCHEDULE_URL
+                        )
+                    elif self.prompt_index == 1:  # current events with kadgar/twitch links
+                        prompt_string = r'Full GGforCharity Schedule: {} Current events: '.format(SCHEDULE_URL)
+                        # add every event to the string
+                        for ongoing_event in current_event_data:
+                            prompt_string += r'[{}] {}, {} (GMT), watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
                                 ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
-                        # if the stream has not started yet, generate a starting soon prompt instead
-                        """
-                        if get_current_time('epoch') < START_TIME_EPOCH:
-                            prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
-                                get_start_time_remaining(),
-                                SCHEDULE_URL,
-                                CHARITY_URL
-                            )
-                        """
-                        for streamer in ongoing_event['Streamers']:
-                            channel = '#{}'.format(streamer)
-                            self.post_in_channel(channel, prompt_string)
+                        if len(streamer_list) > 1:
+                            prompt_string += r'Watch all the streams at: {}'.format(return_kadgar_link(streamer_list))
+                    """
+                    # if the stream has not started yet, generate a starting soon prompt instead
+                    if get_current_time('epoch') < START_TIME_EPOCH:
+                        prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
+                            get_start_time_remaining(),
+                            SCHEDULE_URL,
+                            CHARITY_URL
+                        )
+                    """
+                    for streamer in streamer_list:
+                        channel = '#{}'.format(streamer)
+                        self.post_in_channel(channel, prompt_string)
                     # iterate prompt index and if > than limit, reset
                     self.prompt_index += 1
                     if self.prompt_index == 2:
@@ -256,7 +265,6 @@ class Twitch:
                 try:
                     self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                     print('[!] String posted successfully!')
-                    # os.startfile('chewbacca.mp3')
                     beep_loop(2, 200, 100)
                     self.close_connection()
                     return True
