@@ -3,7 +3,6 @@ import sqlite3
 import time
 import os
 import urllib.request
-from datetime import datetime
 from winsound import Beep
 from bs4 import BeautifulSoup
 from purrtools import *
@@ -95,26 +94,21 @@ def get_amount_donated(old_amount='', new_amount=''):
         amount_donated
     ))
     os.startfile('chewbacca.mp3')
-    #beep_loop(4, 500, 100)
     return amount_donated
-
-
-def get_current_epoch():
-    return int(time.mktime(datetime.now().timetuple()))
 
 
 def get_time_passed():
     old_time = datetime(2015, 10, 14, 1, 00, 00)
     epoch_old = time.mktime(old_time.timetuple())
     # print('Old Times:\n\tdatetime: {}\n\tEpoch seconds: {}'.format(t_old, epoch_old))
-    epoch_passed = get_current_epoch() - epoch_old
+    epoch_passed = get_current_time('epoch') - epoch_old
     hours_passed = round(((epoch_passed / 60) / 60), 1)
     # print('\tHours passed: {}'.format(hours_passed))
     return hours_passed
 
 
 def get_start_time_remaining():
-    time_left = (START_TIME_EPOCH - get_current_epoch())
+    time_left = (START_TIME_EPOCH - get_current_time('epoch'))
     time_left = time_left / 60 / 60 # convert to hours
     return round(time_left, 2)
 
@@ -222,7 +216,7 @@ class Twitch:
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                         # if the stream has not started yet, generate a starting soon prompt instead
-                        if get_current_epoch() < START_TIME_EPOCH:
+                        if get_current_time('epoch') < START_TIME_EPOCH:
                             prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
                                 get_start_time_remaining(),
                                 SCHEDULE_URL,
@@ -320,7 +314,7 @@ class Twitch:
             return ()
 
     def get_current_events(self):
-        current_time_epoch = get_current_epoch()
+        current_time_epoch = get_current_time('epoch')
         current_events = []
         all_event_data = self.get_db_data()
         for event in all_event_data:
@@ -356,7 +350,7 @@ class Twitch:
 
     def record_donation(self, amount_donated='', total_raised=''):
         try:
-            current_time_epoch = get_current_epoch()
+            current_time_epoch = get_current_time('epoch')
             self.dbcur.execute('INSERT INTO donations VALUES (NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
             self.dbcon.commit()
             print('[+] Purrbot has recorded a donation!')
