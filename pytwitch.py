@@ -1,7 +1,7 @@
 import socket
 import pysqlite
-import os
 import urllib.request
+from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
 from purrtools import *
@@ -92,7 +92,7 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    os.startfile('chewbacca.mp3')
+    startfile('chewbacca.mp3')
     return amount_donated
 
 
