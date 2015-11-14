@@ -15,13 +15,16 @@ GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stre
 CHECK_TICK = 5  # seconds between checks
 PROMPT_TICK_MINUTES = 15
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
+
 # Stream specific
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
+
 # MISC
 testing_mode = False
+
 # set global testing variables
 if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
@@ -31,8 +34,6 @@ if testing_mode:
 def beep_loop(number=0, frequency=200, length=100):
     for i in range(0, number):
         Beep(frequency, length)
-
-# global return functions
 
 
 def create_url_request():
