@@ -119,7 +119,7 @@ class Twitch:
         self.channel = channel
         # self.connection = socket.socket()
         self.cycle_count = 0
-        self.prompt_index = 0  # index of prompt posted
+        self.prompt_index = 1  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
         self.db = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
         if testing_mode:
@@ -179,10 +179,10 @@ class Twitch:
                         prompt_string = r'Full GGforCharity Schedule: {} Current events: '.format(SCHEDULE_URL)
                         # add every event to the string
                         for ongoing_event in current_event_data:
-                            prompt_string += r'[{}] {}, {} (GMT), watch at: {}  '.format(
+                            prompt_string += r'[{}] {}, watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
-                                ongoing_event['Day'],
+                                #ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                         if len(streamer_list) > 1:
@@ -299,10 +299,10 @@ class Twitch:
         if len(current_events) > 0:
             print('[+] Current ongoing events:')
         for event in current_events:
-            print('\t> [{}] {} {}'.format(
+            print('\t> [{}] {} on {}'.format(
                 event['RowId'],
-                event['Day'],
-                event['Event']
+                event['Event'],
+                event['Day']
             ))
         for event in current_events:
             print_list('Streamers:', event['Streamers'])
