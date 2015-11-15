@@ -12,7 +12,7 @@ PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
-CHECK_TICK = 5  # seconds between checks
+CHECK_TICK = 3  # seconds between checks
 PROMPT_TICK_MINUTES = 10
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 
@@ -122,7 +122,7 @@ class Twitch:
         self.channel = channel
         # self.connection = socket.socket()
         self.cycle_count = 0
-        self.prompt_index = 1  # index of prompt posted
+        self.prompt_index = 0  # index of prompt posted
         self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
         self.db = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
         if testing_mode:
@@ -188,7 +188,7 @@ class Twitch:
                                 #ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
-                        if len(streamer_list) > 1:
+                        if len(streamer_list) > 1 and len(current_event_data) > 1:
                             prompt_string += r'Watch all the streams at: {}'.format(return_kadgar_link(streamer_list))
                     """
                     # if the stream has not started yet, generate a starting soon prompt instead
