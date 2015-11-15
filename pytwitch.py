@@ -170,7 +170,7 @@ class Twitch:
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''  # declare the string
                     if self.prompt_index == 0:  # money and schedule link
-                        prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {}  Check out the stream schedule at: {}'.format(
+                        prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {} Check out the stream schedule at: {}'.format(
                             new_money_raised,
                             CHARITY_URL,
                             SCHEDULE_URL
