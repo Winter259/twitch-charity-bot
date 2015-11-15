@@ -13,7 +13,7 @@ DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
 CHECK_TICK = 5  # seconds between checks
-PROMPT_TICK_MINUTES = 15
+PROMPT_TICK_MINUTES = 10
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 
 # Stream specific
@@ -93,7 +93,10 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    startfile('chewbacca.mp3')
+    try:
+        startfile('chewbacca.mp3')
+    except Exception as e:
+        print('[-] Purrbot was unable to play the donation sound: {}'.format(e))
     return amount_donated
 
 
