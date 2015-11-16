@@ -1,12 +1,28 @@
-from pytwitch import *
+import pysqlite
+import pytwitch
+import urllib.request
+from os import startfile
+from winsound import Beep
+from bs4 import BeautifulSoup
+from cfg import *
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
 NICK = "purrbot359"                 # your Twitch username, lowercase
 PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from here: http://www.twitchapps.com/tmi/
 CHAN = "#test"                      # the channel you want to join
-PROMPT_TICK_TIME = 10 * 60  # interval in seconds between when the bot will post prompts
 """
+
+# Stream specific constants. Adjust these according to the stream
+GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
+CHECK_TICK = 3  # seconds between checks
+PROMPT_TICK_MINUTES = 5
+CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
+
+CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
+SCHEDULE_URL = r'http://elitedangerous.events/charity/'
+START_TIME_EPOCH = 1447372800
+END_TIME_EPOCH = 1447632000
 
 
 def beep_loop(number=0, frequency=200, length=100):
@@ -61,7 +77,7 @@ def get_amount_donated(old_amount='', new_amount=''):
     # print('old: {} new: {}'.format(old_amount, new_amount))
     old_amount_float = get_float_from_string(old_amount)
     new_amount_float = get_float_from_string(new_amount)
-    if testing_mode:
+    if testing_mode:  # adjust this
         print('[!] WARNING! Purrbot is in testing mode and is attempting to do 4.00 - 2.03!')
         old_amount_float = round(float('2.03'), 2)
         new_amount_float = round(float('4.00'), 2)
@@ -94,9 +110,14 @@ def return_kadgar_link(streamer_list=[]):
 
 
 def main():
+    print('--- Initialising Purrbot! ---')
+    purrbot = pytwitch.Pytwitch(NICK, PASS, CHAN)
+    database = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
+    bot_cycles = 0      # Global cycles of the bot
+    prompt_cycles = 0   # increment by 1 per cycle, then post a prompt when equal to CYCLES_FOR_PROMPT constant
+    prompt_index = 0    # index of the available prompts
     print('--- Starting Purrbot! ---')
-    purrbot = Twitch(NICK, PASS, CHAN)
-    purrbot.run()
+    current_money_raised = scrape_amount_raised()  # get the donation amount for comparison
 
 
 if __name__ == '__main__':

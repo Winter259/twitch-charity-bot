@@ -1,26 +1,11 @@
 import socket
-import pysqlite
-import urllib.request
-from os import startfile
-from winsound import Beep
-from bs4 import BeautifulSoup
 from purrtools import print_list, get_current_time, pause
-from cfg import *
+
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
 DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
-GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
-CHECK_TICK = 3  # seconds between checks
-PROMPT_TICK_MINUTES = 5
-CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
-
-# Stream specific
-CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
-SCHEDULE_URL = r'http://elitedangerous.events/charity/'
-START_TIME_EPOCH = 1447372800
-END_TIME_EPOCH = 1447632000
 
 # MISC
 testing_mode = False
@@ -31,16 +16,12 @@ if testing_mode:
     CYCLES_FOR_PROMPT = 3
 
 
-class Twitch:
+class Pytwitch:
     def __init__(self, name='', token='', channel=''):
         self.name = name
         self.token = token
         self.channel = channel
         # self.connection = socket.socket()
-        self.cycle_count = 0
-        self.prompt_index = 0  # index of prompt posted
-        self.prompt_cycles = 0  # increment to by 1 every cycle, when equal to CYCLES_FOR_PROMPT, reset and prompt
-        self.db = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
         if testing_mode:
             self.dbtable = 'testing'
         else:
@@ -52,7 +33,7 @@ class Twitch:
         """
 
     def run(self):
-        current_money_raised = scrape_amount_raised()  # Get the donation amount once before starting the loops, for comparison
+        # current_money_raised = scrape_amount_raised()  # Get the donation amount once before starting the loops, for comparison
         while True:
             print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
             current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
