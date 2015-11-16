@@ -13,7 +13,7 @@ DATA_BUFFER_SIZE = 1024
 INITIAL_BUFFER_SIZE = 4098
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
 CHECK_TICK = 3  # seconds between checks
-PROMPT_TICK_MINUTES = 10
+PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 
 # Stream specific
@@ -29,90 +29,6 @@ testing_mode = False
 if testing_mode:
     print('[!] PURRBOT IS IN TESTING MODE!')
     CYCLES_FOR_PROMPT = 3
-
-
-def beep_loop(number=0, frequency=200, length=100):
-    for i in range(0, number):
-        Beep(frequency, length)
-
-
-def create_url_request():
-    request = urllib.request.Request(
-        CHARITY_URL,
-        data=None,
-        headers={
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-        }
-    )
-    return request
-
-
-def scrape_amount_raised():
-    try:
-        print('[+] Purrbot is scraping the charity URL')
-        url_request = create_url_request()
-        f = urllib.request.urlopen(url_request)
-        data = f.read().decode('utf-8')
-        soup = BeautifulSoup(data, 'lxml')
-        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
-        achieved_amount = td[0].text  # get just the text
-        print('[+] Current amount:', achieved_amount)
-    except Exception:
-        print('[-] Purrbot could not scrape the amount: {}'.format(Exception))
-        return ''
-    return achieved_amount
-
-
-def get_float_from_string(amount=''):
-    if amount == '':
-        print('[-] Empty string passed to the decimal from string converter')
-        return ''
-    float_str = ''
-    for letter in amount:
-        if letter in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-            float_str += letter
-        if letter == '.':
-            float_str += letter
-    return round(float(float_str), 2)
-
-
-def get_amount_donated(old_amount='', new_amount=''):
-    if old_amount == '' or new_amount == '':
-        print('[-] An amount was not passed to the amount donated method')
-        return 0
-    # print('old: {} new: {}'.format(old_amount, new_amount))
-    old_amount_float = get_float_from_string(old_amount)
-    new_amount_float = get_float_from_string(new_amount)
-    if testing_mode:
-        print('[!] WARNING! Purrbot is in testing mode and is attempting to do 4.00 - 2.03!')
-        old_amount_float = round(float('2.03'), 2)
-        new_amount_float = round(float('4.00'), 2)
-    amount_donated = new_amount_float - old_amount_float
-    print('[+] New donation of: {} - {} = {}$'.format(
-        new_amount_float,
-        old_amount_float,
-        amount_donated
-    ))
-    try:
-        startfile('chewbacca.mp3')
-    except Exception as e:
-        print('[-] Purrbot was unable to play the donation sound: {}'.format(e))
-    return amount_donated
-
-
-def return_kadgar_link(streamer_list=[]):
-    if len(streamer_list) == 0:
-        print('[-] No streamers passed to the kadgar link generator!')
-        return ''
-    if len(streamer_list) == 1:
-        print('[+] Only one streamer passed, passing twitch stream link instead')
-        twitch_link = 'http://www.twitch.tv/'
-        twitch_link += streamer_list[0]
-        return twitch_link
-    kadgar_link = 'http://kadgar.net/live'
-    for streamer in streamer_list:
-        kadgar_link += '/' + streamer
-    return kadgar_link
 
 
 class Twitch:
@@ -173,19 +89,17 @@ class Twitch:
                     # now we decide which chat string to post, round robin between a set number
                     prompt_string = ''  # declare the string
                     if self.prompt_index == 0:  # money and schedule link
-                        prompt_string = r'GGforCharity has raised: {} so far!  Donate at: {} Check out the stream schedule at: {}'.format(
+                        prompt_string = r'GGforCharity will be ending soon but you can still donate! We have raised: {} so far! You can still donate at: {}'.format(
                             new_money_raised,
-                            CHARITY_URL,
-                            SCHEDULE_URL
+                            CHARITY_URL
                         )
                     elif self.prompt_index == 1:  # current events with kadgar/twitch links
-                        prompt_string = r'Full GGforCharity Schedule: {} Current events: '.format(SCHEDULE_URL)
+                        prompt_string = r'Post stream event: '
                         # add every event to the string
                         for ongoing_event in current_event_data:
                             prompt_string += r'[{}] {}, watch at: {}  '.format(
                                 ongoing_event['RowId'],
                                 ongoing_event['Event'],
-                                #ongoing_event['Day'],
                                 return_kadgar_link(ongoing_event['Streamers'])
                             )
                         if len(streamer_list) > 1 and len(current_event_data) > 1:
