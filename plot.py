@@ -1,7 +1,6 @@
 import pysqlite
-import time
 import matplotlib.pyplot as plt
-from datetime import datetime
+from purrtools import get_current_time
 
 database = pysqlite.Pysqlite('GGforCharity DB', 'ggforcharity.db')
 data = database.get_db_data('donations')
@@ -34,10 +33,20 @@ for money in money_list:
     float_list.append(float(float_str))
     #print(float_str)
 
+# add the current time and current donation amount as another field to properly show time passing
+time_list.append(get_current_time('epoch'))
+float_list.append(float_list[-1])
+
 plt.title('GGforCharity Donations over Time')
 plt.xlabel('time: 12/11/15 22:23 to 16/11/15 00:00')
 plt.ylabel('donations ($CAD)')
-current_time_epoch = int(time.mktime(datetime.now().timetuple()))
+plt.axvline(1447437600, color='y')
+plt.axvline(1447502400, color='y')
+plt.axvline(1447567200, color='y')
+plt.axhline(1000, color='g')
+plt.axhline(2000, color='g')
+plt.axhline(3000, color='g')
+plt.axhline(4000, color='g')
 plt.plot(time_list, float_list)
 plt.xlim(1447367000, 1447632000)
 plt.ylim(0, 5000)
