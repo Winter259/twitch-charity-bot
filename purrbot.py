@@ -1,6 +1,7 @@
 import pysqlite
 import pytwitch
 import urllib.request
+from purrtools import get_current_time, print_list, pause
 from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
@@ -14,11 +15,11 @@ CHAN = "#test"                      # the channel you want to join
 """
 
 # Stream specific constants. Adjust these according to the stream
+DATABASE_TABLE = 'ggforcharity'
 GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
 CHECK_TICK = 3  # seconds between checks
 PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
-
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
 START_TIME_EPOCH = 1447372800
@@ -109,6 +110,41 @@ def return_kadgar_link(streamer_list=[]):
     return kadgar_link
 
 
+def get_current_events(db, verbose=False):
+    current_events = []
+    current_time = get_current_time('epoch')
+    db_event_data = db.get_db_data(DATABASE_TABLE)
+    for event_data in db_event_data:
+        start_time = event_data[2]  # be sure that these are stored in epoch form
+        end_time = event_data[3]
+        if (current_time > start_time) and (current_time < end_time):  # this means that the event is ongoing
+            # split up the streamers into a list if a , is present
+            streamers = event_data[5].strip(' ')  # untested feature
+            if ',' in streamers:
+                streamers = streamers.split(',')
+            else:
+                streamers = [streamers]  # put in a list for easy iteration later on
+            # store all this data in a dict for easy reference
+            current_event = {
+                    'ID': event_data[0],
+                    'Day': event_data[1],
+                    'StartTime': event_data[2],
+                    'EndTime': event_data[3],
+                    'Event': event_data[4],
+                    'Streamers': streamers
+                }
+            current_events.append(current_event)
+    if len(current_events) > 0 and verbose:
+        print('[+] Current ongoing events:')
+        for event in current_events:
+            event_string = '\t> ID: {} Event: {} Day: {} Streamers: '.format(event['ID'], event['Event'], event['Day'])
+            for streamer in event['Streamers']:
+                event_string += '{} '.format(streamer)
+            print(event_string)
+    return current_events
+
+
+
 def main():
     print('--- Initialising Purrbot! ---')
     purrbot = pytwitch.Pytwitch(NICK, PASS, CHAN)
@@ -118,6 +154,11 @@ def main():
     prompt_index = 0    # index of the available prompts
     print('--- Starting Purrbot! ---')
     current_money_raised = scrape_amount_raised()  # get the donation amount for comparison
+    while True:  # start the actual loop
+        print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
+        current_events_list = get_current_events(database, True)  # get a list of current event dicts
+
+
 
 
 if __name__ == '__main__':

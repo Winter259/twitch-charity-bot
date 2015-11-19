@@ -35,8 +35,6 @@ class Pytwitch:
     def run(self):
         # current_money_raised = scrape_amount_raised()  # Get the donation amount once before starting the loops, for comparison
         while True:
-            print('[+] Purrbot is on cycle: {}'.format(self.cycle_count))
-            current_event_data = self.get_current_events()  # returns a list of dicts each with the current ongoing events
             new_money_raised = scrape_amount_raised()  # get donation amount
             if not new_money_raised == current_money_raised and not new_money_raised == '':  # check if the amount has increased
                 new_donation = get_amount_donated(current_money_raised, new_money_raised)
@@ -171,40 +169,6 @@ class Pytwitch:
                     self.close_connection()
                     return False
 
-    def get_current_events(self):
-        current_time_epoch = get_current_time('epoch')
-        current_events = []
-        all_event_data = self.db.get_db_data(self.dbtable)
-        for event in all_event_data:
-            event_start_time = event[2]
-            event_end_time = event[3]
-            #print('Current: {} Start: {} End: {}'.format(current_time_epoch, event_start_time, event_end_time))
-            if (current_time_epoch > event_start_time) and (current_time_epoch < event_end_time):
-                #print('It is a current event!')
-                if ',' in event[5]:  # this indicates that it should be a list
-                    streamers = event[5].split(',')
-                else:
-                    streamers = [event[5]]  # encapsulate in a list for easy iteration
-                current_event = {
-                    'RowId': event[0],
-                    'Day': event[1],
-                    'StartTime': event[2],
-                    'EndTime': event[3],
-                    'Event': event[4],
-                    'Streamers': streamers
-                }
-                current_events.append(current_event)
-        if len(current_events) > 0:
-            print('[+] Current ongoing events:')
-        for event in current_events:
-            print('\t> [{}] {} on {}'.format(
-                event['RowId'],
-                event['Event'],
-                event['Day']
-            ))
-        for event in current_events:
-            print_list('Streamers:', event['Streamers'])
-        return current_events
 
     def record_donation(self, amount_donated='', total_raised=''):
         try:
