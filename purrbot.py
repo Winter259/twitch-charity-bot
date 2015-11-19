@@ -22,6 +22,7 @@ PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
+DONATION_CURRENCY = '$ CAD'
 DONATION_SOUND_PATH = 'chewbacca.mp3'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
@@ -157,6 +158,7 @@ def main():
     current_amount_raised = ''  # stops some IDEs from complaining
     new_amount_raised = ''
     print('--- Starting Purrbot! ---')
+    print('[+] Purrbot is attempting to retrieve the first amount of donations')
     try:
         current_amount_raised = scrape_amount_raised()  # get the donation amount for comparison
         new_amount_raised = scrape_amount_raised()  # fill the new raised variable too
@@ -173,7 +175,17 @@ def main():
             print('[-] Purrbot could not scrape the amount raised: {}'.format(e))
         if not new_amount_raised == current_amount_raised:  # new donation if true!
             current_amount_raised = new_amount_raised  # update to the newer amount
-            new_donation = get_amount_donated()
+            new_donation = get_amount_donated()  # get a float value of the amount donated
+            if not new_donation == 0:
+                print('[!] Purrbot has detected a new donation of: {} {}'.format(new_donation, DONATION_CURRENCY))
+                # build the string to post to channels
+                chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
+                    new_donation,
+                    DONATION_CURRENCY,
+                    new_amount_raised,
+                    CHARITY_URL
+                )
+
         else:  # no new donation, check if we should post a prompt instead
             pass
 
