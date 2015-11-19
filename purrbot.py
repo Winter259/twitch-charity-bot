@@ -185,9 +185,24 @@ def main():
                     new_amount_raised,
                     CHARITY_URL
                 )
-
+                # record the donation to the database for future visualisation
+                try:
+                    database.insert_db_data('donations', '(NULL, ?, ?, ?)', (new_donation, current_amount_raised, get_current_time()))
+                    print('[+] Purrbot has successfully recorded the donation')
+                except Exception as e:
+                    print('[-] Purrbot did not manage to record the donation: {}'.format(e))
+                # create a set of all streamers currently streaming, regardless of event
+                all_current_streamers = set()  # use a set to avoid duplicates
+                for ongoing_event in current_events_list:
+                    for streamer in ongoing_event['Streamers']:
+                        all_current_streamers.add(streamer)
+                # post the chat string to all streamers
+                for streamer in all_current_streamers:
+                    channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
+                    purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
         else:  # no new donation, check if we should post a prompt instead
-            pass
+            if prompt_cycles == CYCLES_FOR_PROMPT:
+                pass
 
 
 

@@ -168,12 +168,3 @@ class Pytwitch:
                     print('[-] Exception occurred: {}'.format(str(e)))
                     self.close_connection()
                     return False
-
-
-    def record_donation(self, amount_donated='', total_raised=''):
-        try:
-            current_time_epoch = get_current_time('epoch')
-            self.db.insert_db_data('donations', '(NULL, ?, ?, ?)', (amount_donated, total_raised, current_time_epoch))
-            print('[+] Purrbot has recorded a donation!')
-        except Exception as e:
-            print('[-] Purrbot did not manage to record the donation: {}'.format(e))
