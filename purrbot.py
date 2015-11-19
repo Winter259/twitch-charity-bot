@@ -22,8 +22,10 @@ PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 SCHEDULE_URL = r'http://elitedangerous.events/charity/'
+DONATION_SOUND_PATH = 'chewbacca.mp3'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
+TESTING_MODE = False
 
 
 def beep_loop(number=0, frequency=200, length=100):
@@ -52,9 +54,9 @@ def scrape_amount_raised():
         td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
         achieved_amount = td[0].text  # get just the text
         print('[+] Current amount:', achieved_amount)
-    except Exception:
-        print('[-] Purrbot could not scrape the amount: {}'.format(Exception))
-        return ''
+    except Exception as e:
+        print('[-] Purrbot could not scrape the amount: {}'.format(e))
+        raise Exception  # TODO: Add more specific exceptions
     return achieved_amount
 
 
@@ -78,7 +80,7 @@ def get_amount_donated(old_amount='', new_amount=''):
     # print('old: {} new: {}'.format(old_amount, new_amount))
     old_amount_float = get_float_from_string(old_amount)
     new_amount_float = get_float_from_string(new_amount)
-    if testing_mode:  # adjust this
+    if TESTING_MODE:
         print('[!] WARNING! Purrbot is in testing mode and is attempting to do 4.00 - 2.03!')
         old_amount_float = round(float('2.03'), 2)
         new_amount_float = round(float('4.00'), 2)
@@ -89,7 +91,7 @@ def get_amount_donated(old_amount='', new_amount=''):
         amount_donated
     ))
     try:
-        startfile('chewbacca.mp3')
+        startfile(DONATION_SOUND_PATH)
     except Exception as e:
         print('[-] Purrbot was unable to play the donation sound: {}'.format(e))
     return amount_donated
@@ -152,12 +154,28 @@ def main():
     bot_cycles = 0      # Global cycles of the bot
     prompt_cycles = 0   # increment by 1 per cycle, then post a prompt when equal to CYCLES_FOR_PROMPT constant
     prompt_index = 0    # index of the available prompts
+    current_amount_raised = ''  # stops some IDEs from complaining
+    new_amount_raised = ''
     print('--- Starting Purrbot! ---')
-    current_money_raised = scrape_amount_raised()  # get the donation amount for comparison
+    try:
+        current_amount_raised = scrape_amount_raised()  # get the donation amount for comparison
+        new_amount_raised = scrape_amount_raised()  # fill the new raised variable too
+    except Exception as e:
+        print('[-] Purrbot could not scrape the amount raised: {}. Check your internet connection'
+              ' and the website you are trying to scrape!').format(e)
+        exit(-1)
     while True:  # start the actual loop
         print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
         current_events_list = get_current_events(database, True)  # get a list of current event dicts
-
+        try:
+            new_amount_raised = scrape_amount_raised()
+        except Exception as e:
+            print('[-] Purrbot could not scrape the amount raised: {}'.format(e))
+        if not new_amount_raised == current_amount_raised:  # new donation if true!
+            current_amount_raised = new_amount_raised  # update to the newer amount
+            new_donation = get_amount_donated()
+        else:  # no new donation, check if we should post a prompt instead
+            pass
 
 
 
