@@ -32,88 +32,6 @@ class Pytwitch:
         self.print_response(INITIAL_BUFFER_SIZE)
         """
 
-    def run(self):
-        # current_money_raised = scrape_amount_raised()  # Get the donation amount once before starting the loops, for comparison
-        while True:
-            new_money_raised = scrape_amount_raised()  # get donation amount
-            if not new_money_raised == current_money_raised and not new_money_raised == '':  # check if the amount has increased
-                new_donation = get_amount_donated(current_money_raised, new_money_raised)
-                current_money_raised = new_money_raised  # update the value
-                print('[!] Purrbot has detected a new donation of {}!'.format(new_donation))
-                # create the string to post to channels
-                chat_string = 'NEW DONATION OF ${} CAD! A total of {} has been raised so far! Visit {} to donate!'.format(
-                    new_donation,
-                    new_money_raised,
-                    CHARITY_URL
-                )
-                # record the donation in the db for future data visualisation
-                self.record_donation(str(new_donation), new_money_raised)
-                # create a set of all streamers across all events
-                current_streamers = set()  # use a set to avoid duplicates, just in case!
-                for ongoing_event in current_event_data:
-                    for streamer in ongoing_event['Streamers']:
-                        current_streamers.add(streamer)
-                for streamer in current_streamers:
-                    channel = '#{}'.format(streamer)  # channel string is #<streamer name>
-                    self.post_in_channel(channel, chat_string)
-            else:  # if not, check if the amount of cycles has exceeded the amount required for a prompt
-                if self.prompt_cycles == CYCLES_FOR_PROMPT:
-                    print('[+] Purrbot is going to post a prompt!')
-                    self.prompt_cycles = 0  # reset this counter for the cycle to reset
-                    # make list of all the streamers
-                    streamer_list = []
-                    for ongoing_event in current_event_data:
-                        for streamer in ongoing_event['Streamers']:
-                            streamer_list.append(streamer)
-                    # now we decide which chat string to post, round robin between a set number
-                    prompt_string = ''  # declare the string
-                    if self.prompt_index == 0:  # money and schedule link
-                        prompt_string = r'GGforCharity will be ending soon but you can still donate! We have raised: {} so far! You can still donate at: {}'.format(
-                            new_money_raised,
-                            CHARITY_URL
-                        )
-                    elif self.prompt_index == 1:  # current events with kadgar/twitch links
-                        prompt_string = r'Post stream event: '
-                        # add every event to the string
-                        for ongoing_event in current_event_data:
-                            prompt_string += r'[{}] {}, watch at: {}  '.format(
-                                ongoing_event['RowId'],
-                                ongoing_event['Event'],
-                                return_kadgar_link(ongoing_event['Streamers'])
-                            )
-                        if len(streamer_list) > 1 and len(current_event_data) > 1:
-                            prompt_string += r'Watch all the streams at: {}'.format(return_kadgar_link(streamer_list))
-                    """
-                    # if the stream has not started yet, generate a starting soon prompt instead
-                    if get_current_time('epoch') < START_TIME_EPOCH:
-                        prompt_string = 'GGforCharity will be starting in {} hours! Find the stream schedule at: {} Donate at: {} !'.format(
-                            get_start_time_remaining(),
-                            SCHEDULE_URL,
-                            CHARITY_URL
-                        )
-                    """
-                    for streamer in streamer_list:
-                        channel = '#{}'.format(streamer)
-                        self.post_in_channel(channel, prompt_string)
-                    # iterate prompt index and if > than limit, reset
-                    self.prompt_index += 1
-                    if self.prompt_index == 2:
-                        self.prompt_index = 0
-                if len(current_event_data) == 0:
-                    print('[-] No event currently ongoing. Purrbot will not post any prompts')
-                    if self.prompt_cycles < 0:
-                        self.prompt_cycles = 0  # fix negative cycle count creating a locked loop
-                else:
-                    self.prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
-            # wait the check tick regardless of what the bot does
-            prompt_cycles_left = int(CYCLES_FOR_PROMPT - self.prompt_cycles + 1)
-            print('[+] Next prompt in: {} cycles, {} minutes'.format(
-                prompt_cycles_left,
-                round((prompt_cycles_left / 60) * CHECK_TICK, 1)
-            ))  # +1 as is 0'd
-            pause('Purrbot is holding for next cycle', CHECK_TICK)
-            self.cycle_count += 1
-
     def connect(self, channel=''):
         if len(channel) == 0:
             print('[-] No channel passed to Purrbot!')
@@ -161,7 +79,6 @@ class Pytwitch:
                 try:
                     self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                     print('[!] String posted successfully!')
-                    beep_loop(2, 200, 100)
                     self.close_connection()
                     return True
                 except Exception as e:
