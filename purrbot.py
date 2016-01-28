@@ -93,17 +93,9 @@ def get_amount_donated(old_amount='', new_amount=''):
     return amount_donated
 
 
-def return_kadgar_link(streamer_list=[]):
-    if len(streamer_list) == 0:
-        print('[-] No streamers passed to the kadgar link generator!')
-        return ''
-    if len(streamer_list) == 1:
-        print('[+] Only one streamer passed, passing twitch stream link instead')
-        twitch_link = 'http://www.twitch.tv/'
-        twitch_link += streamer_list[0]
-        return twitch_link
+def return_kadgar_link():
     kadgar_link = 'http://kadgar.net/live'
-    for streamer in streamer_list:
+    for streamer in STREAMER_LIST:
         kadgar_link += '/' + streamer
     return kadgar_link
 
@@ -120,17 +112,6 @@ def insert_donation_into_db(db, amount=0, verbose=False):
         except Exception as e:
             if verbose:
                 print('[-] Purrbot did not manage to record the donation: {}'.format(e))
-
-
-def get_all_current_streamers(current_events=[]):
-    if len(current_events) == 0:
-        print('[-] No events passed to the get all streamers method')
-        return []
-    all_current_streamers = set()  # use a set to avoid duplicates
-    for ongoing_event in current_events:
-        for streamer in ongoing_event['Streamers']:
-            all_current_streamers.add(streamer)
-    return all_current_streamers
 
 
 def main():
@@ -187,7 +168,9 @@ def main():
                             CHARITY_URL
                         )
                     elif prompt_index == 1:
-                        pass  # TO FILL IN
+                        prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
+                            return_kadgar_link()
+                        )
                     for streamer in STREAMER_LIST:
                         channel_name = '#{}'.format(streamer)
                         purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
