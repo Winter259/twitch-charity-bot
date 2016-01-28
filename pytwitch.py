@@ -40,9 +40,9 @@ class Pytwitch:
             try:
                 self.connection = socket.socket()
                 self.connection.connect((HOST, PORT))
-                self.connection.send("PASS {}\r\n".format(PASS).encode("utf-8"))
-                self.connection.send("NICK {}\r\n".format(NICK).encode("utf-8"))
-                self.connection.send("JOIN {}\r\n".format(channel).encode("utf-8"))
+                self.connection.send("PASS {}\r\n".format(self.token).encode("utf-8"))
+                self.connection.send("NICK {}\r\n".format(self.name).encode("utf-8"))
+                self.connection.send("JOIN {}\r\n".format(self.channel).encode("utf-8"))
                 print('[+] Purrbot has successfully connected to the twitch irc channel: {}'.format(channel))
                 return True
             except Exception as e:
