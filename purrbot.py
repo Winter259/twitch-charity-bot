@@ -2,9 +2,8 @@ import pysqlite
 import pytwitch
 import urllib.request
 import cfg
-from purrtools import print_list, pause
+from purrtools import pause
 from os import startfile
-from winsound import Beep
 from bs4 import BeautifulSoup
 
 """
@@ -18,14 +17,12 @@ CHAN = "#test"                      # the channel you want to join
 DATABASE_NAME = 'charity'
 DATABASE_TABLE = 'donations'
 STREAMER_LIST = ['bubblemapgaminglive', 'misfits_enterprises']
-CHECK_TICK = 3  # seconds between checks
+CHECK_TICK = 5  # seconds between checks
 PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 DONATION_CURRENCY = '£'
 DONATION_SOUND_PATH = 'chewbacca.mp3'
-START_TIME_EPOCH = 1447372800
-END_TIME_EPOCH = 1447632000
 TESTING_MODE = False
 
 
@@ -89,7 +86,7 @@ def get_amount_donated(old_amount='', new_amount=''):
     try:
         startfile(DONATION_SOUND_PATH)
     except Exception as e:
-        print('[-] Purrbot was unable to play the donation sound: {}'.format(e))
+        print('[-] Unable to play donation sound: {}'.format(e))
     return amount_donated
 
 
