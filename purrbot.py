@@ -1,11 +1,11 @@
 import pysqlite
 import pytwitch
 import urllib.request
+import cfg
 from purrtools import get_current_time, print_list, pause
 from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
-from cfg import *
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
@@ -15,23 +15,17 @@ CHAN = "#test"                      # the channel you want to join
 """
 
 # Stream specific constants. Adjust these according to the stream
-DATABASE_TABLE = 'ggforcharity'
-GITHUB_URL = r'https://github.com/Winter259/twitch-charity-bot/tree/charity-stream'
+DATABASE_NAME = 'charity'
+DATABASE_TABLE = 'donations'
 CHECK_TICK = 3  # seconds between checks
 PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
-CHARITY_URL = r'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
-SCHEDULE_URL = r'http://elitedangerous.events/charity/'
-DONATION_CURRENCY = '$ CAD'
+CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
+DONATION_CURRENCY = '£'
 DONATION_SOUND_PATH = 'chewbacca.mp3'
 START_TIME_EPOCH = 1447372800
 END_TIME_EPOCH = 1447632000
 TESTING_MODE = False
-
-
-def beep_loop(number=0, frequency=200, length=100):
-    for i in range(0, number):
-        Beep(frequency, length)
 
 
 def create_url_request():
@@ -45,7 +39,7 @@ def create_url_request():
     return request
 
 
-def scrape_amount_raised():
+def get_donation_amount():
     try:
         print('[+] Purrbot is scraping the charity URL')
         url_request = create_url_request()
@@ -157,20 +151,20 @@ def get_all_current_streamers(current_events=[]):
             all_current_streamers.add(streamer)
     return all_current_streamers
 
+
 def main():
-    print('--- Initialising Purrbot! ---')
-    purrbot = pytwitch.Pytwitch(NICK, PASS, CHAN)
-    database = pysqlite.Pysqlite('GGforCharity', 'ggforcharity.db')
+    print('[!] Starting Purrbot359')
+    purrbot = pytwitch.Pytwitch(cfg.NICK, cfg.PASS, cfg.CHAN)
+    database = pysqlite.Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
     bot_cycles = 0      # Global cycles of the bot
     prompt_cycles = 0   # increment by 1 per cycle, then post a prompt when equal to CYCLES_FOR_PROMPT constant
     prompt_index = 0    # index of the available prompts
-    current_amount_raised = ''  # stops some IDEs from complaining
+    current_amount_raised = ''  # stops Pycharm from complaining
     new_amount_raised = ''
-    print('--- Starting Purrbot! ---')
     print('[+] Purrbot is attempting to retrieve the first amount of donations')
     try:
-        current_amount_raised = scrape_amount_raised()  # get the donation amount for comparison
-        new_amount_raised = scrape_amount_raised()  # fill the new raised variable too
+        current_amount_raised = get_donation_amount()  # get the donation amount for comparison
+        new_amount_raised = get_donation_amount()  # fill the new raised variable too
     except Exception as e:
         print('[-] Purrbot could not scrape the amount raised: {}. Check your internet connection'
               ' and the website you are trying to scrape!').format(e)
@@ -179,7 +173,7 @@ def main():
         print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
         current_events_list = get_current_events(database, True)  # get a list of current event dicts
         try:
-            new_amount_raised = scrape_amount_raised()
+            new_amount_raised = get_donation_amount()
         except Exception as e:
             print('[-] Purrbot could not scrape the amount raised: {}'.format(e))
         if not new_amount_raised == current_amount_raised:  # new donation if true!
