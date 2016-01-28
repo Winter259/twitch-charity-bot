@@ -2,7 +2,7 @@ import pysqlite
 import pytwitch
 import urllib.request
 import cfg
-from purrtools import get_current_time, print_list, pause
+from purrtools import print_list, pause
 from os import startfile
 from winsound import Beep
 from bs4 import BeautifulSoup
@@ -166,79 +166,79 @@ def main():
         current_amount_raised = get_donation_amount()  # get the donation amount for comparison
         new_amount_raised = get_donation_amount()  # fill the new raised variable too
     except Exception as e:
-        print('[-] Purrbot could not scrape the amount raised: {}. Check your internet connection'
-              ' and the website you are trying to scrape!').format(e)
+        print('[-] Website scrape error: {}').format(e)
+        input('[?] Click any key to exit')
         exit(-1)
     while True:  # start the actual loop
         print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
-        current_events_list = get_current_events(database, True)  # get a list of current event dicts
         try:
             new_amount_raised = get_donation_amount()
         except Exception as e:
-            print('[-] Purrbot could not scrape the amount raised: {}'.format(e))
-        if not new_amount_raised == current_amount_raised:  # new donation if true!
-            current_amount_raised = new_amount_raised  # update to the newer amount
-            new_donation = get_amount_donated()  # get a float value of the amount donated
-            if not new_donation == 0:
-                print('[!] Purrbot has detected a new donation of: {} {}'.format(new_donation, DONATION_CURRENCY))
-                # build the string to post to channels
-                chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
-                    new_donation,
-                    DONATION_CURRENCY,
-                    new_amount_raised,
-                    CHARITY_URL
-                )
-                # record the donation to the database for future visualisation
-                try:
-                    database.insert_db_data('donations', '(NULL, ?, ?, ?)', (new_donation, current_amount_raised, get_current_time()))
-                    print('[+] Purrbot has successfully recorded the donation')
-                except Exception as e:
-                    print('[-] Purrbot did not manage to record the donation: {}'.format(e))
-                # post the chat string to all streamers
-                for streamer in get_all_current_streamers():  # get a set of all streamers currently streaming, regardless of event
-                    channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
-                    purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
-        else:  # no new donation, check if we should post a prompt instead
-            if len(current_events_list) == 0:  # if no events are going on, do not post anything
-                print('[-] No events are currently ongoing. Purrbot will not post any prompts')
-                if prompt_cycles < 0:
-                    prompt_cycles = 0  # fix negative cycle count creating a locked loop, RETEST IF ACTUALLY NEEDED
-            elif prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
-                print('[+] Purrbot is going to post a prompt')
-                prompt_cycles = 0  # reset the counter
-                prompt_string = ''
-                # do a round robin between the chat strings available, according to the prompt index
-                if prompt_index == 0:  # money raised, schedule and donation link
-                    prompt_string = r'GGforCharity has raised {} so far! You too can donate to the casue at: {}' \
-                                    r' The schedule can be found at:'.format(
+            print('[-] Website scrape error: {}'.format(e))
+        else:
+            if not new_amount_raised == current_amount_raised:  # true when a new donation is present
+                current_amount_raised = new_amount_raised  # update to the newer amount
+                new_donation = get_amount_donated()  # get a float value of the amount donated
+                if not new_donation == 0:
+                    print('[!] NEW DONATION: {} {}'.format(new_donation, DONATION_CURRENCY))
+                    # build the string to post to channels
+                    chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
+                        new_donation,
+                        DONATION_CURRENCY,
                         new_amount_raised,
-                        CHARITY_URL,
-                        SCHEDULE_URL
+                        CHARITY_URL
                     )
-                elif prompt_index == 1:
-                    prompt_string = r'GGforCharity event schedule: {} Current Events: '.format(SCHEDULE_URL)
-                    # add all the ongoing events to the string
-                    for ongoing_event in current_events_list:
-                        prompt_string += r'[{}] {}, watch at: {}  '.format(
-                            ongoing_event['ID'],
-                            ongoing_event['Event'],
-                            return_kadgar_link(ongoing_event['Streamers'])
+                    # record the donation to the database for future visualisation
+                    try:
+                        database.insert_db_data(DATABASE_TABLE, '(NULL, ?, ?, CURRENT_TIMESTAMP)', (current_amount_raised, ))
+                        print('[+] Purrbot has successfully recorded the donation')
+                    except Exception as e:
+                        print('[-] Purrbot did not manage to record the donation: {}'.format(e))
+                    # post the chat string to all streamers
+                    for streamer in get_all_current_streamers():  # get a set of all streamers currently streaming, regardless of event
+                        channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
+                        purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
+            else:  # no new donation, check if we should post a prompt instead
+                if len(current_events_list) == 0:  # if no events are going on, do not post anything
+                    print('[-] No events are currently ongoing. Purrbot will not post any prompts')
+                    if prompt_cycles < 0:
+                        prompt_cycles = 0  # fix negative cycle count creating a locked loop, RETEST IF ACTUALLY NEEDED
+                elif prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
+                    print('[+] Purrbot is going to post a prompt')
+                    prompt_cycles = 0  # reset the counter
+                    prompt_string = ''
+                    # do a round robin between the chat strings available, according to the prompt index
+                    if prompt_index == 0:  # money raised, schedule and donation link
+                        prompt_string = r'GGforCharity has raised {} so far! You too can donate to the casue at: {}' \
+                                        r' The schedule can be found at:'.format(
+                            new_amount_raised,
+                            CHARITY_URL,
+                            SCHEDULE_URL
                         )
-                    if len(get_all_current_streamers(current_events_list)) > 1 and len(current_events_list) > 1:
-                        # add a kadgar link of all the streamers, regardless of whether they are in the same event
-                        prompt_string += r'Watch all the streams at: {}'.format(
-                            return_kadgar_link(get_all_current_streamers(current_events_list))
-                        )
-                # post to all the channels
-                for streamer in get_all_current_streamers(current_events_list):
-                    channel_name = '#{}'.format(streamer)
-                    purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
-                # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
-                prompt_index += 1
-                if prompt_index == 2:
-                    prompt_index = 0
-            else:
-                prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
+                    elif prompt_index == 1:
+                        prompt_string = r'GGforCharity event schedule: {} Current Events: '.format(SCHEDULE_URL)
+                        # add all the ongoing events to the string
+                        for ongoing_event in current_events_list:
+                            prompt_string += r'[{}] {}, watch at: {}  '.format(
+                                ongoing_event['ID'],
+                                ongoing_event['Event'],
+                                return_kadgar_link(ongoing_event['Streamers'])
+                            )
+                        if len(get_all_current_streamers(current_events_list)) > 1 and len(current_events_list) > 1:
+                            # add a kadgar link of all the streamers, regardless of whether they are in the same event
+                            prompt_string += r'Watch all the streams at: {}'.format(
+                                return_kadgar_link(get_all_current_streamers(current_events_list))
+                            )
+                    # post to all the channels
+                    for streamer in get_all_current_streamers(current_events_list):
+                        channel_name = '#{}'.format(streamer)
+                        purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
+                    # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
+                    prompt_index += 1
+                    if prompt_index == 2:
+                        prompt_index = 0
+                else:
+                    prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
     # wait the check tick, regardless of what the bot has done
     prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
     print('[+] Next prompt in: {} cycles, {} minutes'.format(
