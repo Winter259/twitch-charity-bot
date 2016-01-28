@@ -2,7 +2,7 @@ import pysqlite
 import pytwitch
 import urllib.request
 import cfg
-from purrtools import pause
+from time import sleep
 from os import startfile
 from bs4 import BeautifulSoup
 
@@ -24,6 +24,15 @@ CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mi
 DONATION_CURRENCY = '£'
 DONATION_SOUND_PATH = 'chewbacca.mp3'
 TESTING_MODE = False
+
+
+def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
+    print('[+] {}'.format(initial_prompt))
+    for tick in range(amount, 0, -1):
+        print('[*] ', 'Pause ends in: {}    '.format(tick), '\r')
+        sleep(1)
+    if clear_pause_prompt:
+        print('                                        ', end='\r')  # clear the line completely
 
 
 def create_url_request():
