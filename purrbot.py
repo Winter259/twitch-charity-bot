@@ -176,38 +176,19 @@ def main():
                         channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
                         purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
             else:  # no new donation, check if we should post a prompt instead
-                if len(current_events_list) == 0:  # if no events are going on, do not post anything
-                    print('[-] No events are currently ongoing. Purrbot will not post any prompts')
-                    if prompt_cycles < 0:
-                        prompt_cycles = 0  # fix negative cycle count creating a locked loop, RETEST IF ACTUALLY NEEDED
-                elif prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
-                    print('[+] Purrbot is going to post a prompt')
+                if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
+                    print('[+] Posting prompt')
                     prompt_cycles = 0  # reset the counter
                     prompt_string = ''
                     # do a round robin between the chat strings available, according to the prompt index
                     if prompt_index == 0:  # money raised, schedule and donation link
-                        prompt_string = r'GGforCharity has raised {} so far! You too can donate to the casue at: {}' \
-                                        r' The schedule can be found at:'.format(
+                        prompt_string = 'Bubble and Jenner have raised {} so far! You too can donate to Gameblast at: {}'.format(
                             new_amount_raised,
-                            CHARITY_URL,
-                            SCHEDULE_URL
+                            CHARITY_URL
                         )
                     elif prompt_index == 1:
-                        prompt_string = r'GGforCharity event schedule: {} Current Events: '.format(SCHEDULE_URL)
-                        # add all the ongoing events to the string
-                        for ongoing_event in current_events_list:
-                            prompt_string += r'[{}] {}, watch at: {}  '.format(
-                                ongoing_event['ID'],
-                                ongoing_event['Event'],
-                                return_kadgar_link(ongoing_event['Streamers'])
-                            )
-                        if len(get_all_current_streamers(current_events_list)) > 1 and len(current_events_list) > 1:
-                            # add a kadgar link of all the streamers, regardless of whether they are in the same event
-                            prompt_string += r'Watch all the streams at: {}'.format(
-                                return_kadgar_link(get_all_current_streamers(current_events_list))
-                            )
-                    # post to all the channels
-                    for streamer in get_all_current_streamers(current_events_list):
+                        pass  # TO FILL IN
+                    for streamer in STREAMER_LIST:
                         channel_name = '#{}'.format(streamer)
                         purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
                     # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
@@ -215,7 +196,7 @@ def main():
                     if prompt_index == 2:
                         prompt_index = 0
                 else:
-                    prompt_cycles += 1  # counter used for prompts, iterate only if there is an event going on
+                    prompt_cycles += 1  # counter used for prompts
     # wait the check tick, regardless of what the bot has done
     prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
     print('[+] Next prompt in: {} cycles, {} minutes'.format(
