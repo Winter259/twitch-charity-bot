@@ -23,10 +23,6 @@ class Pytwitch:
         self.channel = channel
         self.verbose = verbose
         # self.connection = socket.socket()
-        if testing_mode:
-            self.dbtable = 'testing'
-        else:
-            self.dbtable = 'events'
         """
         self.connect(channel)
         print('[+] Initial buffer content:')
