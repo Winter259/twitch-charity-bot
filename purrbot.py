@@ -118,10 +118,14 @@ def main():
     print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
     purrbot = Pytwitch(cfg.NICK, cfg.PASS, cfg.CHAN)
     database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
-    bot_cycles = 0      # Global cycles of the bot
-    prompt_cycles = 0   # increment by 1 per cycle, then post a prompt when equal to CYCLES_FOR_PROMPT constant
-    prompt_index = 0    # index of the available prompts
-    current_amount_raised = ''  # stops Pycharm from complaining
+    # global cycles of the bot
+    bot_cycles = 0
+    # increment once per cycle, use this to keep track of cycles up until enough cycles pass for a prompt
+    prompt_cycles = 0
+    # use to keep track of which index is to be posted
+    prompt_index = 0
+    # strings to store the amount raised for comparison to determine new donations
+    current_amount_raised = ''
     new_amount_raised = ''
     print('[+] Purrbot is attempting to retrieve the first amount of donations')
     try:
