@@ -1,19 +1,21 @@
-import pysqlite
-import pytwitch
-import urllib.request
 import cfg
+import yarn
+from pysqlite import Pysqlite
+from pytwitch import Pytwitch
 from time import sleep
-from os import startfile
-from bs4 import BeautifulSoup
+from os import startfile  # used for playing the audio file
 
 """
 Include a file called cfg.py in the same directory as main.py with the following:
-NICK = "purrbot359"                 # your Twitch username, lowercase
-PASS = "xyzxyyzxyhfdiufjdsoifjospi" # your Twitch OAuth token, get this from here: http://www.twitchapps.com/tmi/
-CHAN = "#test"                      # the channel you want to join
+# your Twitch username in lowercase
+NICK = 'purrbot359'
+# your Twitch OAuth token
+PASS = 'yzxyyzxyhfdiufjdsoifjospi'
+# the channel you want to join, starting with '#'
+CHAN = '#test'
 """
 
-# Stream specific constants. Adjust these according to the stream
+# Stream specific values. Adjust these according to the stream
 DATABASE_NAME = 'charity'
 DATABASE_TABLE = 'donations'
 STREAMER_LIST = ['bubblemapgaminglive', 'misfits_enterprises']
@@ -22,6 +24,7 @@ PROMPT_TICK_MINUTES = 5
 CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
 DONATION_CURRENCY = '£'
+PLAY_DONATION_SOUND = False
 DONATION_SOUND_PATH = 'chewbacca.mp3'
 TESTING_MODE = False
 
@@ -35,44 +38,33 @@ def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
         print('                                        ', end='\r')  # clear the line completely
 
 
-def create_url_request():
-    request = urllib.request.Request(
-        CHARITY_URL,
-        data=None,
-        headers={
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-        }
-    )
-    return request
-
-
 def get_donation_amount():
+    print('[+] Attempting to scrape the charity URL')
     try:
-        print('[+] Purrbot is scraping the charity URL')
-        url_request = create_url_request()
-        f = urllib.request.urlopen(url_request)
-        data = f.read().decode('utf-8')
-        soup = BeautifulSoup(data, 'lxml')
-        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
-        achieved_amount = td[0].text  # get just the text
-        print('[+] Current amount:', achieved_amount)
+        soup = yarn.soup_page(url=CHARITY_URL)
     except Exception as e:
-        print('[-] Purrbot could not scrape the amount: {}'.format(e))
-        raise Exception  # TODO: Add more specific exceptions
-    return achieved_amount
+        print('[-] Unable to soup the charity URL: {}'.format(e))
+        return ''
+    else:
+        # Here put the specific scraping method required, depending on the website
+        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
+        current_amount = td[0].text  # get just the text
+        print('[+] Current amount:', current_amount)
+        return current_amount
 
 
+# get a float value xy.z from the passed string, used for calculations
 def get_float_from_string(amount=''):
     if amount == '':
         print('[-] Empty string passed to the decimal from string converter')
         return ''
-    float_str = ''
+    amount_string = ''
     for letter in amount:
         if letter in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-            float_str += letter
+            amount_string += letter
         if letter == '.':
-            float_str += letter
-    return round(float(float_str), 2)
+            amount_string += letter
+    return round(float(amount_string), 2)
 
 
 def get_amount_donated(old_amount='', new_amount=''):
@@ -92,10 +84,11 @@ def get_amount_donated(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    try:
-        startfile(DONATION_SOUND_PATH)
-    except Exception as e:
-        print('[-] Unable to play donation sound: {}'.format(e))
+    if PLAY_DONATION_SOUND:
+        try:
+            startfile(DONATION_SOUND_PATH)
+        except Exception as e:
+            print('[-] Unable to play donation sound: {}'.format(e))
     return amount_donated
 
 
@@ -121,9 +114,10 @@ def insert_donation_into_db(db, amount=0, verbose=False):
 
 
 def main():
-    print('[!] Starting Purrbot359')
-    purrbot = pytwitch.Pytwitch(cfg.NICK, cfg.PASS, cfg.CHAN)
-    database = pysqlite.Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
+    print('[!] Starting purrbot359, twitch stream bot for keeping track of charity streams')
+    print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
+    purrbot = Pytwitch(cfg.NICK, cfg.PASS, cfg.CHAN)
+    database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
     bot_cycles = 0      # Global cycles of the bot
     prompt_cycles = 0   # increment by 1 per cycle, then post a prompt when equal to CYCLES_FOR_PROMPT constant
     prompt_index = 0    # index of the available prompts
