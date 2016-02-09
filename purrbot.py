@@ -67,7 +67,7 @@ def get_float_from_string(amount=''):
     return round(float(amount_string), 2)
 
 
-def get_amount_donated(old_amount='', new_amount=''):
+def get_amount_difference(old_amount='', new_amount=''):
     if old_amount == '' or new_amount == '':
         print('[-] An amount was not passed to the amount donated method')
         return 0
@@ -127,10 +127,10 @@ def main():
     # strings to store the amount raised for comparison to determine new donations
     current_amount_raised = ''
     new_amount_raised = ''
-    print('[+] Purrbot is attempting to retrieve the first amount of donations')
+    print('[+] Retrieving donation amount for the first time')
     try:
-        current_amount_raised = get_donation_amount()  # get the donation amount for comparison
-        new_amount_raised = get_donation_amount()  # fill the new raised variable too
+        current_amount_raised = get_donation_amount()
+        new_amount_raised = get_donation_amount()
     except Exception as e:
         print('[-] Website scrape error: {}').format(e)
         input('[?] Click any key to exit')
@@ -141,49 +141,50 @@ def main():
             new_amount_raised = get_donation_amount()
         except Exception as e:
             print('[-] Website scrape error: {}'.format(e))
-        else:
-            if not new_amount_raised == current_amount_raised:  # true when a new donation is present
-                current_amount_raised = new_amount_raised  # update to the newer amount
-                new_donation = get_amount_donated()  # get a float value of the amount donated
-                if not new_donation == 0:
-                    print('[!] NEW DONATION: {} {}'.format(new_donation, DONATION_CURRENCY))
-                    # build the string to post to channels
-                    chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
-                        new_donation,
-                        DONATION_CURRENCY,
+            continue
+        if not new_amount_raised == current_amount_raised:  # true when a new donation is present
+            current_amount_raised = new_amount_raised  # update to the newer amount
+            new_donation = get_amount_difference()  # get a float value of the amount donated just now
+            if not new_donation == 0.0:
+                print('[!] NEW DONATION: {} {}'.format(new_donation, DONATION_CURRENCY))
+                # record the donation to the database for future visualisation
+                insert_donation_into_db(database, current_amount_raised)
+                # build the string to post to channels
+                chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
+                    new_donation,
+                    DONATION_CURRENCY,
+                    new_amount_raised,
+                    CHARITY_URL
+                )
+                # post the chat string to all streamers
+                for streamer in STREAMER_LIST:
+                    channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
+                    purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
+                # TODO Write to text file here for use with OBS
+        else:  # no new donation, check if we should post a prompt instead
+            if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
+                print('[+] Posting prompt')
+                prompt_cycles = 0  # reset the counter
+                prompt_string = ''
+                # do a round robin between the chat strings available, according to the prompt index
+                if prompt_index == 0:  # money raised, schedule and donation link
+                    prompt_string = 'Bubble and Jenner have raised {} so far! You too can donate to Gameblast at: {}'.format(
                         new_amount_raised,
                         CHARITY_URL
                     )
-                    # record the donation to the database for future visualisation
-                    insert_donation_into_db(database, current_amount_raised)
-                    # post the chat string to all streamers
-                    for streamer in STREAMER_LIST:
-                        channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
-                        purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
-            else:  # no new donation, check if we should post a prompt instead
-                if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
-                    print('[+] Posting prompt')
-                    prompt_cycles = 0  # reset the counter
-                    prompt_string = ''
-                    # do a round robin between the chat strings available, according to the prompt index
-                    if prompt_index == 0:  # money raised, schedule and donation link
-                        prompt_string = 'Bubble and Jenner have raised {} so far! You too can donate to Gameblast at: {}'.format(
-                            new_amount_raised,
-                            CHARITY_URL
-                        )
-                    elif prompt_index == 1:
-                        prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
-                            return_kadgar_link()
-                        )
-                    for streamer in STREAMER_LIST:
-                        channel_name = '#{}'.format(streamer)
-                        purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
-                    # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
-                    prompt_index += 1
-                    if prompt_index == 2:
-                        prompt_index = 0
-                else:
-                    prompt_cycles += 1  # counter used for prompts
+                elif prompt_index == 1:
+                    prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
+                        return_kadgar_link()
+                    )
+                for streamer in STREAMER_LIST:
+                    channel_name = '#{}'.format(streamer)
+                    purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
+                # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
+                prompt_index += 1
+                if prompt_index == 2:
+                    prompt_index = 0
+            else:
+                prompt_cycles += 1  # counter used for prompts
     # wait the check tick, regardless of what the bot has done
     prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
     print('[+] Next prompt in: {} cycles, {} minutes'.format(
