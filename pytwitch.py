@@ -95,7 +95,11 @@ class Pytwitch:
                 print('\t', chat_string)
             # if the bot is not in reading mode, we need to connect
             if not self.read_chat:
-                self.connect(self.channel)
+                self.connect(channel=channel)
+            else:
+                # if the bot is in read_chat mode, then it is tied to only one
+                # channel at a time, so assign the channel to the instance assigned one
+                channel = self.channel
             try:
                 self.connection.send('PRIVMSG {} :{}\r\n'.format(channel, chat_string).encode('utf-8'))
                 if self.verbose:
