@@ -101,6 +101,21 @@ def insert_donation_into_db(db, amount=0, verbose=False):
                 print('[-] Purrbot did not manage to record the donation: {}'.format(e))
 
 
+def write_to_text_file(file_name='donations.txt', donation_amount='', verbose=False):
+    if donation_amount == '':
+        if verbose:
+            print('[-] No amount passed to be written to the text file')
+    else:
+        if verbose:
+            print('[+] Attempting to write: {} to the text file'.format(donation_amount))
+        try:
+            with open(file_name, 'w') as file:
+                file.write(donation_amount)
+                file.close()
+        except Exception as e:
+            print('[-] Unable to write to text file: {}'.format(e))
+
+
 def main():
     print('[!] Starting purrbot359, twitch stream bot for keeping track of charity streams')
     print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
@@ -135,8 +150,8 @@ def main():
             new_donation = get_amount_difference()  # get a float value of the amount donated just now
             if not new_donation == 0.0:
                 print('[!] NEW DONATION: {} {}'.format(new_donation, charity.DONATION_CURRENCY))
-                # record the donation to the database for future visualisation
-                insert_donation_into_db(database, current_amount_raised)
+                # record the donation to the database
+                insert_donation_into_db(db=database, amount=current_amount_raised, verbose=True)
                 # build the string to post to channels
                 chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
                     new_donation,
@@ -148,7 +163,8 @@ def main():
                 for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
                     purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
-                # TODO Write to text file here for use with OBS
+                # write the donation amount to a text file for use with OBS
+                write_to_text_file(donation_amount=current_amount_raised, verbose=True)
         else:  # no new donation, check if we should post a prompt instead
             if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
                 print('[+] Posting prompt')
