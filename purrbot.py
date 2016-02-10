@@ -1,5 +1,5 @@
 import cfg
-import yarn
+import charitycfg as charity
 from pysqlite import Pysqlite
 from pytwitch import Pytwitch
 from time import sleep
@@ -15,17 +15,15 @@ PASS = 'yzxyyzxyhfdiufjdsoifjospi'
 CHAN = '#test'
 """
 
-# Stream specific values. Adjust these according to the stream
+"""
+Include another file callled charitycfg.py in the same directory, with the following:
+STREAMER_LIST = ['bubblemapgaminglive', 'misfits_enterprises']
+"""
+
 DATABASE_NAME = 'charity'
 DATABASE_TABLE = 'donations'
-STREAMER_LIST = ['bubblemapgaminglive', 'misfits_enterprises']
 CHECK_TICK = 5  # seconds between checks
-PROMPT_TICK_MINUTES = 5
-CYCLES_FOR_PROMPT = (PROMPT_TICK_MINUTES * 60) / CHECK_TICK
-CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
-DONATION_CURRENCY = '£'
-PLAY_DONATION_SOUND = False
-DONATION_SOUND_PATH = 'chewbacca.mp3'
+CYCLES_FOR_PROMPT = (charity.PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 TESTING_MODE = False
 
 
@@ -36,21 +34,6 @@ def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
         sleep(1)
     if clear_pause_prompt:
         print('                                        ', end='\r')  # clear the line completely
-
-
-def get_donation_amount():
-    print('[+] Attempting to scrape the charity URL')
-    try:
-        soup = yarn.soup_page(url=CHARITY_URL)
-    except Exception as e:
-        print('[-] Unable to soup the charity URL: {}'.format(e))
-        return ''
-    else:
-        # Here put the specific scraping method required, depending on the website
-        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
-        current_amount = td[0].text  # get just the text
-        print('[+] Current amount:', current_amount)
-        return current_amount
 
 
 # get a float value xy.z from the passed string, used for calculations
@@ -84,9 +67,9 @@ def get_amount_difference(old_amount='', new_amount=''):
         old_amount_float,
         amount_donated
     ))
-    if PLAY_DONATION_SOUND:
+    if charity.PLAY_DONATION_SOUND:
         try:
-            startfile(DONATION_SOUND_PATH)
+            startfile(charity.DONATION_SOUND_PATH)
         except Exception as e:
             print('[-] Unable to play donation sound: {}'.format(e))
     return amount_donated
@@ -94,7 +77,12 @@ def get_amount_difference(old_amount='', new_amount=''):
 
 def return_kadgar_link():
     kadgar_link = 'http://kadgar.net/live'
-    for streamer in STREAMER_LIST:
+    # if there is only one streamer in the list, then simply return their twitch channel url
+    if len(charity.STREAMER_LIST) == 1:
+        twitch_link = 'www.twitch.tv/{}'.format(charity.STREAMER_LIST[0])
+        return twitch_link
+    for streamer in charity.STREAMER_LIST:
+        # append each streamer at the end
         kadgar_link += '/' + streamer
     return kadgar_link
 
@@ -116,7 +104,7 @@ def insert_donation_into_db(db, amount=0, verbose=False):
 def main():
     print('[!] Starting purrbot359, twitch stream bot for keeping track of charity streams')
     print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
-    purrbot = Pytwitch(cfg.NICK, cfg.PASS, cfg.CHAN)
+    purrbot = Pytwitch(name=cfg.NICK, token=cfg.PASS, channel=cfg.CHAN, verbose=True)
     database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
     # global cycles of the bot
     bot_cycles = 0
@@ -129,8 +117,8 @@ def main():
     new_amount_raised = ''
     print('[+] Retrieving donation amount for the first time')
     try:
-        current_amount_raised = get_donation_amount()
-        new_amount_raised = get_donation_amount()
+        current_amount_raised = charity.get_donation_amount()
+        new_amount_raised = charity.get_donation_amount()
     except Exception as e:
         print('[-] Website scrape error: {}').format(e)
         input('[?] Click any key to exit')
@@ -138,7 +126,7 @@ def main():
     while True:  # start the actual loop
         print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
         try:
-            new_amount_raised = get_donation_amount()
+            new_amount_raised = charity.get_donation_amount()
         except Exception as e:
             print('[-] Website scrape error: {}'.format(e))
             continue
@@ -146,18 +134,18 @@ def main():
             current_amount_raised = new_amount_raised  # update to the newer amount
             new_donation = get_amount_difference()  # get a float value of the amount donated just now
             if not new_donation == 0.0:
-                print('[!] NEW DONATION: {} {}'.format(new_donation, DONATION_CURRENCY))
+                print('[!] NEW DONATION: {} {}'.format(new_donation, charity.DONATION_CURRENCY))
                 # record the donation to the database for future visualisation
                 insert_donation_into_db(database, current_amount_raised)
                 # build the string to post to channels
                 chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
                     new_donation,
-                    DONATION_CURRENCY,
+                    charity.DONATION_CURRENCY,
                     new_amount_raised,
-                    CHARITY_URL
+                    charity.CHARITY_URL
                 )
                 # post the chat string to all streamers
-                for streamer in STREAMER_LIST:
+                for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
                     purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
                 # TODO Write to text file here for use with OBS
@@ -170,13 +158,13 @@ def main():
                 if prompt_index == 0:  # money raised, schedule and donation link
                     prompt_string = 'Bubble and Jenner have raised {} so far! You too can donate to Gameblast at: {}'.format(
                         new_amount_raised,
-                        CHARITY_URL
+                        charity.CHARITY_URL
                     )
                 elif prompt_index == 1:
                     prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
                         return_kadgar_link()
                     )
-                for streamer in STREAMER_LIST:
+                for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)
                     purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
                 # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
