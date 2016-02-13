@@ -30,7 +30,7 @@ TESTING_MODE = False
 def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
     print('[+] {}'.format(initial_prompt))
     for tick in range(amount, 0, -1):
-        print('[*] ', 'Pause ends in: {}    '.format(tick), '\r')
+        print('[*] Pause ends in: {}    '.format(tick), end='\r')
         sleep(1)
     if clear_pause_prompt:
         print('                                        ', end='\r')  # clear the line completely
@@ -120,6 +120,9 @@ def main():
     print('[!] Starting purrbot359, twitch stream bot for keeping track of charity streams')
     print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
     purrbot = Pytwitch(name=cfg.NICK, token=cfg.PASS, channel=cfg.CHAN, verbose=True)
+    purrbot.post_in_channel(cfg.CHAN, 'Purrbot now online and watching for donations at {}'.format(
+        charity.CHARITY_URL
+    ))
     database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
     # global cycles of the bot
     bot_cycles = 0
@@ -146,16 +149,16 @@ def main():
             print('[-] Website scrape error: {}'.format(e))
             continue
         if not new_amount_raised == current_amount_raised:  # true when a new donation is present
+            new_donation = get_amount_difference(current_amount_raised, new_amount_raised)  # get a float value of the amount donated just now
             current_amount_raised = new_amount_raised  # update to the newer amount
-            new_donation = get_amount_difference()  # get a float value of the amount donated just now
             if not new_donation == 0.0:
-                print('[!] NEW DONATION: {} {}'.format(new_donation, charity.DONATION_CURRENCY))
+                print('[!] NEW DONATION: {}{}'.format(charity.DONATION_CURRENCY, new_donation))
                 # record the donation to the database
                 insert_donation_into_db(db=database, amount=current_amount_raised, verbose=True)
                 # build the string to post to channels
-                chat_string = 'NEW DONATION OF {} {}! A total of {} has been raised so far! Visit {} to donate!'.format(
-                    new_donation,
+                chat_string = 'NEW DONATION OF {}{}! A total of {} has been raised so far! Visit {} to donate!'.format(
                     charity.DONATION_CURRENCY,
+                    new_donation,
                     new_amount_raised,
                     charity.CHARITY_URL
                 )
@@ -172,31 +175,33 @@ def main():
                 prompt_string = ''
                 # do a round robin between the chat strings available, according to the prompt index
                 if prompt_index == 0:  # money raised, schedule and donation link
-                    prompt_string = 'Bubble and Jenner have raised {} so far! You too can donate to Gameblast at: {}'.format(
+                    prompt_string = '{} has been raised during Sloughblast so far! You too can donate to Gameblast at: {}'.format(
                         new_amount_raised,
                         charity.CHARITY_URL
                     )
+                """
                 elif prompt_index == 1:
                     prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
                         return_kadgar_link()
                     )
+                """
                 for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)
                     purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
                 # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
                 prompt_index += 1
-                if prompt_index == 2:
+                if prompt_index == 1:  # change back to 2 later on
                     prompt_index = 0
             else:
                 prompt_cycles += 1  # counter used for prompts
-    # wait the check tick, regardless of what the bot has done
-    prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
-    print('[+] Next prompt in: {} cycles, {} minutes'.format(
-        prompt_cycles_left,
-        round((prompt_cycles_left / 60) * CHECK_TICK, 1)
-    ))  # +1 as is 0'd
-    pause('Purrbot is holding for next cycle', CHECK_TICK)
-    bot_cycles += 1
+        # wait the check tick, regardless of what the bot has done
+        prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
+        print('[+] Next prompt in: {} cycles, {} minutes'.format(
+            prompt_cycles_left,
+            round((prompt_cycles_left / 60) * CHECK_TICK, 1)
+        ))  # +1 as is 0'd
+        pause('Purrbot is holding for next cycle', CHECK_TICK)
+        bot_cycles += 1
 
 
 if __name__ == '__main__':
