@@ -95,10 +95,10 @@ def insert_donation_into_db(db, amount=0, verbose=False):
         try:
             db.insert_db_data(DATABASE_TABLE, '(NULL, ?, CURRENT_TIMESTAMP)', (amount, ))
             if verbose:
-                print('[+] Purrbot has successfully recorded the donation')
+                print('[+] Donation successfully recorded')
         except Exception as e:
             if verbose:
-                print('[-] Purrbot did not manage to record the donation: {}'.format(e))
+                print('[-] Donation recording error: {}'.format(e))
 
 
 def write_to_text_file(file_name='donations.txt', donation_amount='', verbose=False):
@@ -142,7 +142,7 @@ def main():
         input('[?] Click any key to exit')
         exit(-1)
     while True:  # start the actual loop
-        print('[+] Purrbot is on cycle: {}'.format(bot_cycles))
+        print('[+] Current Cycle: {}'.format(bot_cycles))
         try:
             new_amount_raised = charity.get_donation_amount()
         except Exception as e:
@@ -196,11 +196,10 @@ def main():
                 prompt_cycles += 1  # counter used for prompts
         # wait the check tick, regardless of what the bot has done
         prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
-        print('[+] Next prompt in: {} cycles, {} minutes'.format(
+        pause('Holding for next cycle. Next prompt in: {} cycles / {} minutes'.format(
             prompt_cycles_left,
-            round((prompt_cycles_left / 60) * CHECK_TICK, 1)
-        ))  # +1 as is 0'd
-        pause('Purrbot is holding for next cycle', CHECK_TICK)
+            round((prompt_cycles_left / 60) * CHECK_TICK, 1) # +1 as is zero indexed
+        ), CHECK_TICK)
         bot_cycles += 1
 
 
