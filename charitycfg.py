@@ -1,12 +1,11 @@
 import yarn
 
 STREAMER_LIST = [
-    'bubblemapgaminglive',
-    'misfits_enterprises'
+    'kateclick',
 ]
 
 PROMPT_TICK_MINUTES = 5
-CHARITY_URL = 'http://pmhf3.akaraisin.com/Donation/Event/Home.aspx?seid=11349&mid=8'
+CHARITY_URL = 'https://mydonate.bt.com/fundraisers/sloughblast16'
 DONATION_CURRENCY = '£'
 PLAY_DONATION_SOUND = False
 DONATION_SOUND_PATH = 'chewbacca.mp3'
@@ -21,11 +20,10 @@ def get_donation_amount():
         return ''
     else:
         # Here put the specific scraping method required, depending on the website
-        td = soup.findAll('td', {'class': 'ThermometerAchived', 'align': 'Right'})  # class is spelt wrongly...
-        current_amount = td[0].text  # get just the text
+        current_amount = soup.find('span', {'class': 'text-primary font-20'}).text
         print('[+] Current amount:', current_amount)
         return current_amount
 
 if __name__ == '__main__':
-    print('Test running the get donation amount method')
-    print('Current amount: {}'.format(get_donation_amount()))
+    print('[!] Test running the get donation amount method')
+    get_donation_amount()
