@@ -7,7 +7,7 @@ It also does intermittent prompts for donations to the charity. It can be adjust
 
 - Python 3.x
 
-- Tested against:
+Tested against:
 
 * 3.4
 * 3.5
