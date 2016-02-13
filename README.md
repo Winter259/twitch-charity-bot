@@ -12,7 +12,7 @@ It also does intermittent prompts for donations to the charity. It can be adjust
 * 3.4
 * 3.5
 
-**Python modules required**
+**Python modules required:**
 
 - BeautifulSoup4
 
