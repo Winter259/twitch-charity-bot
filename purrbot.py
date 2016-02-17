@@ -162,9 +162,7 @@ def main():
                     write_to_text_file(
                         file_dir='',
                         file_name='{}_donations'.format(streamer),
-                        # Remove the donation currency from the amount written as it causes
-                        # encoding issues when trying to be read on a linux system
-                        donation_amount=current_amount_raised.strip(charity.DONATION_CURRENCY),
+                        donation_amount=current_amount_raised,
                         verbose=True
                     )
         else:  # no new donation, check if we should post a prompt instead
