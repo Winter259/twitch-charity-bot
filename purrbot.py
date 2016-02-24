@@ -1,7 +1,7 @@
 import cfg
 import charitycfg as charity
 from pysqlite import Pysqlite
-from pytwitch import Pytwitch
+from pytwitch import Pytwitch, return_kadgar_link
 from time import sleep
 from os import startfile  # used for playing the audio file
 
@@ -75,18 +75,6 @@ def get_amount_difference(old_amount='', new_amount=''):
     return amount_donated
 
 
-def return_kadgar_link():
-    kadgar_link = 'http://kadgar.net/live'
-    # if there is only one streamer in the list, then simply return their twitch channel url
-    if len(charity.STREAMER_LIST) == 1:
-        twitch_link = 'www.twitch.tv/{}'.format(charity.STREAMER_LIST[0])
-        return twitch_link
-    for streamer in charity.STREAMER_LIST:
-        # append each streamer at the end
-        kadgar_link += '/' + streamer
-    return kadgar_link
-
-
 def insert_donation_into_db(db, amount=0, verbose=False):
     if amount == 0:
         if verbose:
@@ -101,7 +89,7 @@ def insert_donation_into_db(db, amount=0, verbose=False):
                 print('[-] Donation recording error: {}'.format(e))
 
 
-def write_to_text_file(file_name='donations.txt', donation_amount='', verbose=False):
+def write_to_text_file(file_dir='', file_name='donations', file_format='.txt', donation_amount='', verbose=False):
     if donation_amount == '':
         if verbose:
             print('[-] No amount passed to be written to the text file')
@@ -109,8 +97,8 @@ def write_to_text_file(file_name='donations.txt', donation_amount='', verbose=Fa
         if verbose:
             print('[+] Attempting to write: {} to the text file'.format(donation_amount))
         try:
-            with open(file_name, 'w') as file:
-                file.write(donation_amount)
+            with open(file_dir + file_name + file_format, 'w') as file:
+                file.write(donation_amount.strip(' {}'.format(charity.DONATION_CURRENCY)))
                 file.close()
         except Exception as e:
             print('[-] Unable to write to text file: {}'.format(e))
@@ -149,7 +137,8 @@ def main():
             print('[-] Website scrape error: {}'.format(e))
             continue
         if not new_amount_raised == current_amount_raised:  # true when a new donation is present
-            new_donation = get_amount_difference(current_amount_raised, new_amount_raised)  # get a float value of the amount donated just now
+            # get a float value of the amount donated just now (not the total)
+            new_donation = get_amount_difference(current_amount_raised, new_amount_raised)
             current_amount_raised = new_amount_raised  # update to the newer amount
             if not new_donation == 0.0:
                 print('[!] NEW DONATION: {}{}'.format(charity.DONATION_CURRENCY, new_donation))
@@ -160,14 +149,22 @@ def main():
                     charity.DONATION_CURRENCY,
                     new_donation,
                     new_amount_raised,
-                    charity.CHARITY_URL
-                )
+                    charity.CHARITY_URL)
                 # post the chat string to all streamers
                 for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)  # channel name is #<streamer>
-                    purrbot.post_in_channel(channel=channel_name, chat_string=chat_string)
-                # write the donation amount to a text file for use with OBS
-                write_to_text_file(donation_amount=current_amount_raised, verbose=True)
+                    purrbot.post_in_channel(
+                        channel=channel_name,
+                        chat_string=chat_string)
+                    # write the donation amount to a text file for use with OBS
+                    # write a text file per streamer, for easier simultaneous access from the api
+                    # especially when running more than one bot concurrently
+                    write_to_text_file(
+                        file_dir='',
+                        file_name='{}_donations'.format(streamer),
+                        donation_amount=current_amount_raised,
+                        verbose=True
+                    )
         else:  # no new donation, check if we should post a prompt instead
             if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
                 print('[+] Posting prompt')
@@ -175,10 +172,9 @@ def main():
                 prompt_string = ''
                 # do a round robin between the chat strings available, according to the prompt index
                 if prompt_index == 0:  # money raised, schedule and donation link
-                    prompt_string = '{} has been raised during Sloughblast so far! You too can donate to Gameblast at: {}'.format(
+                    prompt_string = '{} has been raised by Team Wotsit so far! You too can donate to Gameblast at: {}'.format(
                         new_amount_raised,
-                        charity.CHARITY_URL
-                    )
+                        charity.CHARITY_URL)
                 """
                 elif prompt_index == 1:
                     prompt_string = 'Watch the twat and the misfit rush to Sag A* at the same time here: {}'.format(
@@ -187,7 +183,9 @@ def main():
                 """
                 for streamer in charity.STREAMER_LIST:
                     channel_name = '#{}'.format(streamer)
-                    purrbot.post_in_channel(channel=channel_name, chat_string=prompt_string)
+                    purrbot.post_in_channel(
+                        channel=channel_name,
+                        chat_string=prompt_string)
                 # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
                 prompt_index += 1
                 if prompt_index == 1:  # change back to 2 later on
@@ -196,10 +194,10 @@ def main():
                 prompt_cycles += 1  # counter used for prompts
         # wait the check tick, regardless of what the bot has done
         prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
-        pause('Holding for next cycle. Next prompt in: {} cycles / {} minutes'.format(
+        pause('Holding for next cycle. Next prompt in {} cycles in {} minutes'.format(
             prompt_cycles_left,
-            round((prompt_cycles_left / 60) * CHECK_TICK, 1) # +1 as is zero indexed
-        ), CHECK_TICK)
+            round((prompt_cycles_left / 60) * CHECK_TICK, 1)),
+            CHECK_TICK)
         bot_cycles += 1
 
 

@@ -25,6 +25,21 @@ if testing_mode:
     CYCLES_FOR_PROMPT = 3
 
 
+# Method to return kadgar links, given a tuple of streamers
+def return_kadgar_link(streamers=None):
+    kadgar_link = 'http://kadgar.net/live'
+    if streamers is None:
+        return 'N/A'
+    # if there is only one streamer in the list, then simply return their twitch channel url
+    if len(streamers) == 1:
+        twitch_link = 'www.twitch.tv/{}'.format(streamers[0])
+        return twitch_link
+    for streamer in streamers:
+        # append each streamer at the end
+        kadgar_link += '/' + streamer
+    return kadgar_link
+
+
 class Pytwitch:
     def __init__(self, name='', token='', channel='', read_chat=False, verbose=False):
         self.name = name

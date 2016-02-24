@@ -1,10 +1,11 @@
+# This Python file uses the following encoding: utf-8
 import yarn
 
 STREAMER_LIST = [
-    'kateclick',
+    'kateclick'
 ]
 
-PROMPT_TICK_MINUTES = 5
+PROMPT_TICK_MINUTES = 10
 CHARITY_URL = 'https://mydonate.bt.com/fundraisers/sloughblast16'
 DONATION_CURRENCY = '£'
 PLAY_DONATION_SOUND = False
