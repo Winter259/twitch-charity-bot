@@ -1,6 +1,7 @@
 import socket
 import cfg
 from time import sleep
+from requests import get as req_get
 
 HOST = 'irc.twitch.tv'  # the Twitch IRC server
 PORT = 6667             # always use port 6667!
@@ -14,7 +15,7 @@ testing_mode = False
 def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
     print('[+] {}'.format(initial_prompt))
     for tick in range(amount, 0, -1):
-        print('[*] ', 'Pause ends in: {}    '.format(tick), '\r')
+        print('[*] ', 'Pause ends in: {}    '.format(tick), end='\r')
         sleep(1)
     if clear_pause_prompt:
         print('                                        ', end='\r')  # clear the line completely
@@ -40,8 +41,44 @@ def return_kadgar_link(streamers=None):
     return kadgar_link
 
 
+def get_online_streamers(streamer_list=None, full_verbose=False, verbose=True):
+    if verbose:
+        print('[+] Getting list of online streamers')
+    if streamer_list is None:
+        if full_verbose:
+            print('[-] No streamer list passed')
+    else:
+        online_streamers = []
+        for streamer in streamer_list:
+            try:
+                data = req_get('https://api.twitch.tv/kraken/streams/' + streamer).json()
+            except Exception as e:
+                if full_verbose:
+                    print('[-] JSON error: {}'.format(e))
+            else:
+                try:
+                    stream_data = data['stream']
+                except KeyError:
+                    print('[-] Unable to get streamer data from API')
+                else:
+                    if stream_data is not None:
+                        if full_verbose:
+                            print('[+] {} is online!'.format(streamer))
+                        online_streamers.append(streamer)
+                    else:
+                        if full_verbose:
+                            print('[-] {} is offline!'.format(streamer))
+        if len(online_streamers) > 0:
+            if verbose:
+                print('[+] Current online streamers: {}'.format(online_streamers))
+        else:
+            if verbose:
+                print('[-] None of the passed streamers are currently online.')
+        return online_streamers
+
+
 class Pytwitch:
-    def __init__(self, name='', token='', channel='', read_chat=False, verbose=False):
+    def __init__(self, name='', token='', channel=None, read_chat=False, verbose=False):
         self.name = name
         self.token = token
         self.channel = channel
@@ -65,9 +102,10 @@ class Pytwitch:
                 self.connection.connect((HOST, PORT))
                 self.connection.send("PASS {}\r\n".format(self.token).encode("utf-8"))
                 self.connection.send("NICK {}\r\n".format(self.name).encode("utf-8"))
-                self.connection.send("JOIN {}\r\n".format(self.channel).encode("utf-8"))
+                if self.channel is not None:
+                    self.connection.send("JOIN {}\r\n".format(self.channel).encode("utf-8"))
                 if self.verbose:
-                    print('[+] Purrbot has successfully connected to the twitch irc channel: {}'.format(channel))
+                    print('[+] Purrbot successfully connected to the twitch channel: {}'.format(channel))
                 return True
             except Exception as e:
                 if self.verbose:
@@ -99,8 +137,8 @@ class Pytwitch:
         else:
             return data
 
-    def post_in_channel(self, channel='', chat_string=''):
-        if len(channel) == 0:
+    def post_in_channel(self, channel=None, chat_string=''):
+        if channel is None:
             if self.verbose:
                 print('[-] No channel passed to post string!')
             return False
@@ -109,7 +147,7 @@ class Pytwitch:
                 print('[?] Attempting to post the string:')
                 print('\t', chat_string)
             # if the bot is not in reading mode, we need to connect
-            if not self.read_chat:
+            if not self.read_chat or self.channel is None:
                 self.connect(channel=channel)
             else:
                 # if the bot is in read_chat mode, then it is tied to only one
@@ -124,6 +162,12 @@ class Pytwitch:
                     print('[-] Exception occurred: {}'.format(str(e)))
             if not self.read_chat:
                 self.close_connection()
+
+    def post_in_streamer_channels(self, streamer_list=None, chat_string='', pause_time=3):
+        channels = ['#' + streamer for streamer in streamer_list]
+        for channel in channels:
+            self.post_in_channel(channel=channel, chat_string=chat_string)
+            pause(initial_prompt='Holding between channels', amount=pause_time)
 
 if __name__ == '__main__':
     bot = Pytwitch(name=cfg.NICK, token=cfg.PASS, channel=cfg.CHAN, verbose=True)
