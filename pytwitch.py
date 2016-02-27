@@ -1,5 +1,5 @@
 import socket
-import cfg
+import bot_config
 from time import sleep
 from requests import get as req_get
 
@@ -170,9 +170,12 @@ class Pytwitch:
             pause(initial_prompt='Holding between channels', amount=pause_time)
 
 if __name__ == '__main__':
-    bot = Pytwitch(name=cfg.NICK, token=cfg.PASS, channel=cfg.CHAN, verbose=True)
+    bot_details = bot_config.purrbots[0]
+    bot = Pytwitch(name=bot_details['NICK'], token=bot_details['TOKEN'], verbose=True)
     while True:
-        bot.connect('#kateclick')
-        bot.post_in_channel('#kateclick', 'test string')
+        bot.connect('#purrcat259')
+        bot.post_in_channel('#purrcat259', 'test string')
+        sleep(2)
+        bot.close_connection()
         sleep(5)
 
