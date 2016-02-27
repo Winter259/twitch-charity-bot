@@ -137,10 +137,12 @@ def main():
                     donation_amount=raised_goal_percentage,
                     verbose=True)
                 # build the string to post to channels
-                chat_string = 'NEW DONATION OF {}{}! {} out of {} raised! {}% of the goal has been reached. Visit {} to donate!'.format(
+                chat_string = 'NEW DONATION OF {}{}! {}{} out of {}{} raised! {}% of the goal has been reached. Visit {} to donate!'.format(
                     charity.DONATION_CURRENCY,
                     round(new_donation, 2),
+                    charity.DONATION_CURRENCY,
                     current_amount_raised,
+                    charity.DONATION_CURRENCY,
                     raised_goal_percentage[1],
                     raised_goal_percentage[2],
                     charity.CHARITY_URL)
