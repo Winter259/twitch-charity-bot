@@ -28,7 +28,7 @@ active_charity_streams = [
                 5,
                 '£',
                 'https://gameblast16.everydayhero.com/uk/team-wotsit',
-                None
+                'default'
             ]
         )
     ),
@@ -45,7 +45,7 @@ active_charity_streams = [
                 5,
                 '£',
                 'https://gameblast16.everydayhero.com/uk/SagARace',
-                None
+                'default'
             ]
         )
     ),
