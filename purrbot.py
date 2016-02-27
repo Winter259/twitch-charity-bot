@@ -27,6 +27,15 @@ def get_non_default_bot(bot_list=None, requested_bot_id=None):
         return None
 
 
+def get_bot(bot_list=None, bot_id='default'):
+    if bot_list is None:
+        print('[-] No bot list passed')
+        return None
+    if bot_id is not 'default':
+        return get_non_default_bot(bot_list=bot_list, requested_bot_id=bot_id)
+    return bot_list[0]
+
+
 def main():
     print('[!] Starting Twitch Charity Bot')
     print('[!] More information can be found at: https://github.com/purrcat259/twitch-charity-bot')
@@ -38,7 +47,6 @@ def main():
     purrbot = Pytwitch(
         name=bot_details['name'],
         token=bot_details['token'],
-        identifier='default',
         verbose=True)
     active_bots.append(purrbot)
     # check if the streams will use any non-default bots
@@ -67,19 +75,24 @@ def main():
     print('[+]\tTeam\t\tBot')
     for stream in active_streams:
         if stream['bot_name'] is None:
-            print('\t{}\t\t{}'.format(stream['team_name'], active_bots[0].return_identity()))
+            print('\t{}\t\t{}'.format(
+                stream['team_name'],
+                active_bots[0].return_identity()))
         else:
-            print('\t{}\t\t{}'.format(stream['team_name'], get_non_default_bot(active_bots, stream['team_name'])))
-
-
-    last_update_timestamp = strftime('%d/%m/%Y %X')
-    print('{} is now online at {} for endpoint: {}, streamers: {}, watching for new donations at: {}. Test mode: {}'.format(
-        bot_name,
-        last_update_timestamp,
-        charity.TEAM_NAME.upper(),
-        charity.STREAMER_LIST,
-        charity.CHARITY_URL,
-        TESTING_MODE))
+            print('\t{}\t\t{}'.format(
+                stream['team_name'],
+                get_non_default_bot(active_bots, stream['team_name']).return_identity()))
+    continue_value = input('[?] Continue? y/n: ')
+    if not continue_value.lower().startswith('y'):
+        exit()
+    update_timestamp = strftime('%d/%m/%Y %X')
+    for stream in active_streams:
+        print('Purrbot is online at {} for stream team: {}, streamers: {}, watching at {}. Test mode: {}'.format(
+            update_timestamp,
+            stream['team_name'],
+            stream['streamer_list'],
+            stream['donation_url'],
+            TESTING_MODE))
     purrbot.post_in_streamer_channels(
         streamer_list=get_online_streamers(streamer_list=charity.STREAMER_LIST, verbose=True),
         chat_string='{} is online at {}, watching for donations.'.format(bot_name, last_update_timestamp),
