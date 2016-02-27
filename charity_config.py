@@ -6,23 +6,81 @@ STREAMER_LIST = [
     'bubblemapgaminglive'
 ]
 
-TEAM_NAME = 'sagArace'
-BOT_INDEX = 1
+stream_fields = [
+    'team_name',
+    'streamer_list',
+    'prompt_tick',  # Minutes
+    'donation_currency',
+    'donation_url'
+]
 
-PROMPT_TICK_MINUTES = 10
-CHARITY_URL = 'https://gameblast16.everydayhero.com/uk/SagARace'
-DONATION_CURRENCY = '£'
-PLAY_DONATION_SOUND = False
-DONATION_SOUND_PATH = 'chewbacca.mp3'
+active_charity_streams = [
+    # TEAM WOTSIT
+    dict(
+        zip(
+            stream_fields,
+            [
+                'wotsit',
+                [
+                    'kateclick',
+                    'natswright',
+                    'symyoulater',
+                    'pleijpje'
+                ],
+                5,
+                '£',
+                'https://gameblast16.everydayhero.com/uk/team-wotsit'
+            ]
+        )
+    ),
+    # TEAM SAGARACE
+    dict(
+        zip(
+            stream_fields,
+            [
+                'sagArace',
+                [
+                    'bubblemapgaminglive',
+                    'misfits_enterprises'
+                ],
+                5,
+                '£',
+                'https://gameblast16.everydayhero.com/uk/SagARace'
+            ]
+        )
+    ),
+    # TEAM TIIQ
+    dict(
+        zip(
+            stream_fields,
+            [
+                'tiiq',
+                [
+                    'djtruthsayer',
+                    'cmdrhughmann'
+                ],
+                10,
+                '£',
+                'https://gameblast16.everydayhero.com/uk/tiiq'
+            ]
+        )
+    )
+]
 
 
-def get_donation_amount(verbose=False):
-    print('[+] Attempting to scrape the charity URL')
+def get_donation_amount(url=None, verbose=False):
+    if url is None:
+        if verbose:
+            print('[-] No URL given, returning error')
+            return 'ERROR: NO URL GIVEN'
+    if verbose:
+        print('[+] Attempting to scrape the charity URL')
     try:
-        soup = yarn.soup_page(url=CHARITY_URL)
+        soup = yarn.soup_page(url=url)
     except Exception as e:
-        print('[-] Unable to soup the charity URL: {}'.format(e))
-        return 'SCRAPE ERROR'
+        if verbose:
+            print('[-] Unable to soup the charity URL: {}'.format(e))
+        return 'ERROR: COULD NOT SCRAPE DONATION AMOUNT'
     else:
         # Here put the specific scraping method required, depending on the website
         container_div = soup.find('div', {'id': 'bar--donation__main'})
@@ -41,4 +99,8 @@ def get_donation_amount(verbose=False):
 
 if __name__ == '__main__':
     print('[!] Test running the get donation amount method')
-    get_donation_amount(verbose=True)
+    for charity_stream in active_charity_streams:
+        print('Team {} have raised: {}'.format(
+            charity_stream['team_name'],
+            get_donation_amount(url=charity_stream['donation_url'], verbose=True)
+        ))
