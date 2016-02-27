@@ -11,9 +11,11 @@ stream_fields = [
     'streamer_list',
     'prompt_tick',  # Minutes
     'donation_currency',
-    'donation_url'
+    'donation_url',
+    'bot'
 ]
 
+# TODO: import these from a txt or csv file rather than hard coding them alongside other values
 active_charity_streams = [
     # TEAM WOTSIT
     dict(
@@ -29,7 +31,8 @@ active_charity_streams = [
                 ],
                 5,
                 '£',
-                'https://gameblast16.everydayhero.com/uk/team-wotsit'
+                'https://gameblast16.everydayhero.com/uk/team-wotsit',
+                None
             ]
         )
     ),
@@ -45,7 +48,8 @@ active_charity_streams = [
                 ],
                 5,
                 '£',
-                'https://gameblast16.everydayhero.com/uk/SagARace'
+                'https://gameblast16.everydayhero.com/uk/SagARace',
+                None
             ]
         )
     ),
@@ -61,7 +65,8 @@ active_charity_streams = [
                 ],
                 10,
                 '£',
-                'https://gameblast16.everydayhero.com/uk/tiiq'
+                'https://gameblast16.everydayhero.com/uk/tiiq',
+                'tiiqhuntergames'
             ]
         )
     )
@@ -100,7 +105,7 @@ def get_donation_amount(url=None, verbose=False):
 if __name__ == '__main__':
     print('[!] Test running the get donation amount method')
     for charity_stream in active_charity_streams:
-        print('Team {} have raised: {}'.format(
+        print('[!] Team {} have raised: {}'.format(
             charity_stream['team_name'],
             get_donation_amount(url=charity_stream['donation_url'], verbose=True)
         ))
