@@ -1,21 +1,17 @@
 # This Python file uses the following encoding: utf-8
 import yarn
 
-STREAMER_LIST = [
-    'misfits_enterprises',
-    'bubblemapgaminglive'
-]
-
 stream_fields = [
     'team_name',
     'streamer_list',
     'prompt_tick',  # Minutes
     'donation_currency',
     'donation_url',
-    'bot'
+    'bot_name'
 ]
 
 # TODO: import these from a txt or csv file rather than hard coding them alongside other values
+# TODO, write test to check that these actually exist
 active_charity_streams = [
     # TEAM WOTSIT
     dict(
