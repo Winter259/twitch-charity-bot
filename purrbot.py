@@ -9,19 +9,69 @@ VERSION = '0.3'
 DATABASE_NAME = 'charity'
 DATABASE_TABLE = 'donations'
 CHECK_TICK = 10  # seconds between checks
-CYCLES_FOR_PROMPT = (charity.PROMPT_TICK_MINUTES * 60) / CHECK_TICK
+# CYCLES_FOR_PROMPT = (charity.PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 TESTING_MODE = False
 
 
+def get_non_default_bot(bot_list=None, requested_bot_id=None):
+    if bot_list is None:
+        print('[-] No bot list passed')
+        return None
+    if requested_bot_id is None:
+        print('[-] No bot requested')
+        return None
+    for bot in bot_list:
+        if bot.return_identity() == requested_bot_id:
+            return bot
+    else:
+        return None
+
+
 def main():
-    # Choose bot here. This shouldn't really need to change in the new system, however tiiqhuntergames
-    # is more appropriate for donation watching on the hunter games for example
+    print('[!] Starting Twitch Charity Bot')
+    print('[!] More information can be found at: https://github.com/purrcat259/twitch-charity-bot')
+    print('[+] Initialising bots')
+    # Determine if any extra bots need to be initialised here and store their instances in a list
+    active_bots = []
+    # Initialise the default bot
     bot_details = bot_config.purrbots[0]
-    bot_name = bot_details['NICK']
-    bot_token = bot_details['TOKEN']
-    print('[!] Starting {}, twitch stream bot for keeping track of charity streams'.format(bot_name))
-    print('[!] You can find more information at: https://github.com/purrcat259/twitch-charity-bot')
-    purrbot = Pytwitch(name=bot_name, token=bot_token, channel=None, verbose=True)
+    purrbot = Pytwitch(
+        name=bot_details['name'],
+        token=bot_details['token'],
+        identifier='default',
+        verbose=True)
+    active_bots.append(purrbot)
+    # check if the streams will use any non-default bots
+    active_streams = charity.active_charity_streams
+    for stream in active_streams:
+        if stream['bot_name'] is not None:
+            print('[+] Team {} require bot with name: {}'.format(stream['team_name'], stream['bot_name']))
+            for bot in bot_config.purrbots:
+                if bot['name'] == stream['bot_name']:
+                    print('[+] Bot found, initialising {}'.format(stream['bot_name']))
+                    # Assign the team name as an identifier for easy comparison later on
+                    non_default_bot = Pytwitch(
+                        name=bot['name'],
+                        token=bot['token'],
+                        identifier=stream['team_name'],
+                        verbose=True)
+                    active_bots.append(non_default_bot)
+                    break
+            else:
+                print('[-] Bot could not be found, please check your config then try again')
+                input('[?] Please press any key to exit')
+                exit()
+        else:
+            print('[+] Team {} will use the standard purrbot359'.format(stream['team_name']))
+    print('[+] Charity bot will start for the following streams:')
+    print('[+]\tTeam\t\tBot')
+    for stream in active_streams:
+        if stream['bot_name'] is None:
+            print('\t{}\t\t{}'.format(stream['team_name'], active_bots[0].return_identity()))
+        else:
+            print('\t{}\t\t{}'.format(stream['team_name'], get_non_default_bot(active_bots, stream['team_name'])))
+
+
     last_update_timestamp = strftime('%d/%m/%Y %X')
     print('{} is now online at {} for endpoint: {}, streamers: {}, watching for new donations at: {}. Test mode: {}'.format(
         bot_name,
