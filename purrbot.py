@@ -140,10 +140,9 @@ def main():
         stream['amount_raised'] = donation_amount_data[0]
         stream['amount_goal'] = donation_amount_data[1]
         stream['amount_percentage'] = donation_amount_data[2]
+        stream['prompt_index'] = 0
         stream['cycle_count'] = 0
         stream['cycles_for_prompt'] = (stream['prompt_tick'] * 60) / CHECK_TICK
-    # initialise queue variables
-    posting_queue = []
     # Start the main loop
     while True:
         for stream in active_streams:
@@ -181,59 +180,61 @@ def main():
                 # write the donation amount to a text file for use with OBS via the API
                 # name the file according to the team name
                 write_and_copy_text_file(
-                    file_name=charity.TEAM_NAME,
+                    file_name=stream['team_name'],
                     donation_amount=donation_amount_data,
                     # fill this in according to the linux directory
                     dest_file_dir='/home/digitalcat/apache-flask/assets/charity/',
                     verbose=True)
-                ################
                 # build the string to post to channels
                 chat_string = 'NEW DONATION OF {}{}! {}{} out of {}{} raised! {}% of the goal has been reached. Visit {} to donate!'.format(
-                    charity.DONATION_CURRENCY,
-                    round(new_donation, 2),
-                    charity.DONATION_CURRENCY,
-                    current_amount_raised,
-                    charity.DONATION_CURRENCY,
-                    raised_goal_percentage[1],
-                    raised_goal_percentage[2],
-                    charity.CHARITY_URL)
+                    stream['donation_currency'],
+                    new_donation,
+                    stream['donation_currency'],
+                    stream['amount_raised'],
+                    stream['donation_currency'],
+                    donation_amount_data[1],
+                    donation_amount_data[2],
+                    stream['donation_url'])
                 # post the chat string to all streamers
                 purrbot.post_in_streamer_channels(
-                    streamer_list=get_online_streamers(streamer_list=charity.STREAMER_LIST, verbose=True),
+                    streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
                     chat_string=chat_string,
                     pause_time=2)
-        else:  # no new donation, check if we should post a prompt instead
-            if prompt_cycles == CYCLES_FOR_PROMPT:  # if we've reached the amount required for a prompt
-                prompt_cycles = 0  # reset the counter
+        else:
+            # if a new donation has not been detected, then check if we have to post a prompt
+            if stream['cycle_count'] == stream['cycles_for_prompt']:
+                # reset the cycle counter
+                stream['cycle_count'] = 0
                 prompt_string = ''
-                # do a round robin between the chat strings available, according to the prompt index
-                if prompt_index == 0:  # money raised, schedule and donation link
+                # do a round robin between the chat strings available, according to the prompt index of the stream
+                if stream['prompt_index'] == 0:  # money raised, schedule and donation link
                     prompt_string = '£{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
-                        new_amount_raised,
-                        charity.TEAM_NAME,
-                        charity.CHARITY_URL)
-                elif prompt_index == 1:
+                        stream['amount_raised'],
+                        stream['team_name'],
+                        stream['donation_url'])
+                elif stream['prompt_index'] == 1:
                     prompt_string = 'Watch all the current team {} streamers here: {}'.format(
-                        charity.TEAM_NAME,
-                        return_kadgar_link(get_online_streamers(streamer_list=charity.STREAMER_LIST, verbose=True)))
+                        stream['team_name'],
+                        return_kadgar_link(get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)))
                 purrbot.post_in_streamer_channels(
-                    streamer_list=get_online_streamers(streamer_list=charity.STREAMER_LIST, verbose=True),
+                    streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
                     chat_string=prompt_string,
                     pause_time=2)
                 # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
-                prompt_index += 1
-                if prompt_index == 2:
-                    prompt_index = 0
+                stream['prompt_index'] += 1
+                if stream['prompt_index'] == 2:  # TODO: Set this value somewhere else rather than manual?
+                    stream['prompt_index'] = 0
             else:
-                prompt_cycles += 1  # counter used for prompts
-        # wait the check tick, regardless of what the bot has done
-        prompt_cycles_left = int(CYCLES_FOR_PROMPT - prompt_cycles + 1)
-        pause('Holding for next cycle.\n[+] Last donation at: {}\n[+] Amount raised: £{}\n[+] Next prompt in {} minutes.'.format(
-            last_update_timestamp,
-            current_amount_raised,
-            round((prompt_cycles_left / 60) * CHECK_TICK, 1)),
-            CHECK_TICK)
-        bot_cycles += 1
+                stream['cycle_count'] += 1  # iterate the counter
+                # print how much time to the next prompt
+                cycles_left = int(stream['cycles_for_prompt'] - stream['cycle_count'] + 1)
+                time_left = round((cycles_left / 60) * CHECK_TICK, 1)
+                print('[+] Team: {}, Last donation at: {}, Next prompt: {} minutes, Amount raised: {}{}, '.format(
+                    stream['team_name'],
+                    update_timestamp,
+                    time_left,
+                    stream['donation_currency'],
+                    stream['amount_raised']))
 
 
 if __name__ == '__main__':
