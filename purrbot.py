@@ -200,41 +200,41 @@ def main():
                     streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
                     chat_string=chat_string,
                     pause_time=2)
-        else:
-            # if a new donation has not been detected, then check if we have to post a prompt
-            if stream['cycle_count'] == stream['cycles_for_prompt']:
-                # reset the cycle counter
-                stream['cycle_count'] = 0
-                prompt_string = ''
-                # do a round robin between the chat strings available, according to the prompt index of the stream
-                if stream['prompt_index'] == 0:  # money raised, schedule and donation link
-                    prompt_string = '£{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
-                        stream['amount_raised'],
-                        stream['team_name'],
-                        stream['donation_url'])
-                elif stream['prompt_index'] == 1:
-                    prompt_string = 'Watch all the current team {} streamers here: {}'.format(
-                        stream['team_name'],
-                        return_kadgar_link(get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)))
-                purrbot.post_in_streamer_channels(
-                    streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
-                    chat_string=prompt_string,
-                    pause_time=2)
-                # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
-                stream['prompt_index'] += 1
-                if stream['prompt_index'] == 2:  # TODO: Set this value somewhere else rather than manual?
-                    stream['prompt_index'] = 0
             else:
-                stream['cycle_count'] += 1  # iterate the counter
-                # print how much time to the next prompt
-                cycles_left = int(stream['cycles_for_prompt'] - stream['cycle_count'] + 1)
-                time_left = round((cycles_left / 60) * CHECK_TICK, 1)
-                print('[+] Team: {}, Last donation at: {}, Next prompt: {} minutes, Amount raised: {}{}, '.format(
-                    stream['team_name'],
-                    update_timestamp,
-                    time_left,
-                    stream['donation_currency'],
-                    stream['amount_raised']))
+                # if a new donation has not been detected, then check if we have to post a prompt
+                if stream['cycle_count'] == stream['cycles_for_prompt']:
+                    # reset the cycle counter
+                    stream['cycle_count'] = 0
+                    prompt_string = ''
+                    # do a round robin between the chat strings available, according to the prompt index of the stream
+                    if stream['prompt_index'] == 0:  # money raised, schedule and donation link
+                        prompt_string = '£{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
+                            stream['amount_raised'],
+                            stream['team_name'],
+                            stream['donation_url'])
+                    elif stream['prompt_index'] == 1:
+                        prompt_string = 'Watch all the current team {} streamers here: {}'.format(
+                            stream['team_name'],
+                            return_kadgar_link(get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)))
+                    purrbot.post_in_streamer_channels(
+                        streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
+                        chat_string=prompt_string,
+                        pause_time=2)
+                    # iterate the prompt index, reset it if it reaches the limit (depends on amount of prompts)
+                    stream['prompt_index'] += 1
+                    if stream['prompt_index'] == 2:  # TODO: Set this value somewhere else rather than manual?
+                        stream['prompt_index'] = 0
+                else:
+                    stream['cycle_count'] += 1  # iterate the counter
+                    # print how much time to the next prompt
+                    cycles_left = int(stream['cycles_for_prompt'] - stream['cycle_count'] + 1)
+                    time_left = round((cycles_left / 60) * CHECK_TICK, 1)
+                    print('[+] Team: {}, Last donation at: {}, Next prompt: {} minutes, Amount raised: {}{}, '.format(
+                        stream['team_name'],
+                        update_timestamp,
+                        time_left,
+                        stream['donation_currency'],
+                        stream['amount_raised']))
 
 
 if __name__ == '__main__':
