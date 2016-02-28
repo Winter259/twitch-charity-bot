@@ -9,7 +9,6 @@ VERSION = '0.3'
 DATABASE_NAME = 'charity'
 DATABASE_TABLE = 'donations'
 CHECK_TICK = 10  # seconds between checks
-# CYCLES_FOR_PROMPT = (charity.PROMPT_TICK_MINUTES * 60) / CHECK_TICK
 TESTING_MODE = False
 
 
@@ -39,6 +38,8 @@ def get_bot(bot_list=None, bot_id='default'):
 def main():
     print('[!] Starting Twitch Charity Bot')
     print('[!] More information can be found at: https://github.com/purrcat259/twitch-charity-bot')
+    print('[+] Opening database connection')
+    database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
     print('[+] Initialising bots')
     # Determine if any extra bots need to be initialised here and store their instances in a list
     active_bots = []
@@ -52,8 +53,8 @@ def main():
     # check if the streams will use any non-default bots
     active_streams = charity.active_charity_streams
     for stream in active_streams:
-        if stream['bot_name'] is not None:
-            print('[+] Team {} require bot with name: {}'.format(stream['team_name'], stream['bot_name']))
+        if not stream['bot_name'] == 'default':
+            print('[+] Team {} require bot with ID: {}'.format(stream['team_name'], stream['bot_name']))
             for bot in bot_config.purrbots:
                 if bot['name'] == stream['bot_name']:
                     print('[+] Bot found, initialising {}'.format(stream['bot_name']))
@@ -74,7 +75,7 @@ def main():
     print('[+] Charity bot will start for the following streams:')
     print('[+]\tTeam\t\tBot')
     for stream in active_streams:
-        if stream['bot_name'] is None:
+        if stream['bot_name'] is 'default':
             print('\t{}\t\t{}'.format(
                 stream['team_name'],
                 active_bots[0].return_identity()))
@@ -87,21 +88,32 @@ def main():
         exit()
     update_timestamp = strftime('%d/%m/%Y %X')
     for stream in active_streams:
-        print('Purrbot is online at {} for stream team: {}, streamers: {}, watching at {}. Test mode: {}'.format(
+        # Print to console first
+        print('[!] Purrbot is online at {} for stream team: {}, streamers: {}, watching at {}. Test mode: {}'.format(
             update_timestamp,
             stream['team_name'],
             stream['streamer_list'],
             stream['donation_url'],
             TESTING_MODE))
-    purrbot.post_in_streamer_channels(
-        streamer_list=get_online_streamers(streamer_list=charity.STREAMER_LIST, verbose=True),
-        chat_string='{} is online at {}, watching for donations.'.format(bot_name, last_update_timestamp),
-        pause_time=2)
-    database = Pysqlite(DATABASE_NAME, DATABASE_NAME + '.db')
-    # global cycles of the bot
-    bot_cycles = 0
-    # increment once per cycle, use this to keep track of cycles up until enough cycles pass for a prompt
-    prompt_cycles = 0
+        # get the default bot
+        bot = active_bots[0]
+        # override if you need another one
+        if stream['bot_name'] is not 'default':
+            # Get the bot needed, by getting the index on the name
+            bot_names = [obj.return_identity() for obj in active_bots]
+            bot_index_needed = bot_names.index(stream['team_name'])
+            bot = active_bots[bot_index_needed]
+        chat_string = '{} is now online for streamers: {}. Watching for donations at {}'.format(
+            bot.name,
+            stream['streamer_list'],
+            stream['donation_url']
+        )
+        bot.post_in_streamer_channels(
+            streamer_list=get_online_streamers(streamer_list=stream['streamer_list']),
+            chat_string=chat_string,
+            pause_time=2
+        )
+    """
     # use to keep track of which index is to be posted
     prompt_index = 0
     # strings to store the amount raised for comparison to determine new donations
@@ -116,39 +128,65 @@ def main():
         print('[-] Website scrape error: {}').format(e)
         input('[?] Click any key to exit')
         exit(-1)
-    while True:  # The actual bot loop starts here
-        print('[+] {} is on cycle: {} for team: {}'.format(
-            bot_name,
-            bot_cycles,
-            charity.TEAM_NAME))
+    """
+    # build extra active stream data from what we already have
+    for stream in active_streams:
         try:
-            raised_goal_percentage = charity.get_donation_amount()
-            new_amount_raised = raised_goal_percentage[0]
+            donation_amount_data = charity.get_donation_amount(url=stream['donation_url'])
         except Exception as e:
-            print('[-] Website scrape error: {}'.format(e))
-            # Skip past this current cycle
-            continue
-        if not new_amount_raised == current_amount_raised or TESTING_MODE:  # true when a new donation is present
-            # update timestamp
-            last_update_timestamp = strftime('%d/%m/%Y %X')
-            # get a float value of the amount donated just now (not the total)
-            new_donation = get_amount_difference(current_amount_raised, new_amount_raised)
-            current_amount_raised = new_amount_raised  # update to the newer amount
-            if not new_donation == 0.0:
-                # insert the currency to a donation string
-                print('[!] NEW DONATION: {} at {}'.format(new_donation, last_update_timestamp))
-                if TESTING_MODE:
-                    from random import randrange
-                    current_amount_raised = str(randrange(1, 5))
-                # insert the donation in the Database
-                insert_donation_into_db(db=database, amount=current_amount_raised, verbose=True)
-                # write the donation amount to a text file for use with OBS
+            print('[-] Unable to scrape website: {}'.format(e))
+            input('Press any key to exit')
+            exit()
+        stream['amount_raised'] = donation_amount_data[0]
+        stream['amount_goal'] = donation_amount_data[1]
+        stream['amount_percentage'] = donation_amount_data[2]
+        stream['cycle_count'] = 0
+        stream['cycles_for_prompt'] = (stream['prompt_tick'] * 60) / CHECK_TICK
+    # initialise queue variables
+    posting_queue = []
+    # Start the main loop
+    while True:
+        for stream in active_streams:
+            stream_bot = get_bot(bot_list=active_bots, bot_id=stream['bot_name'])
+            print('[+] {} is on cycle: {} for team: {} and streamers: {}'.format(
+                stream_bot.name,
+                stream['cycle_count'],
+                stream['team_name'],
+                stream['streamer_list']))
+            try:
+                donation_amount_data = charity.get_donation_amount(url=stream['donation_url'])
+                new_amount_raised = donation_amount_data[0]
+            except Exception as e:
+                print('[-] Website scrape error: {}'.format(e))
+                # Skip past this current stream cycle if the scrape does not work
+                continue
+            # When a new donation is present, this will be true
+            if not new_amount_raised == stream['amount_raised']:
+                # update the timestamp
+                update_timestamp = strftime('%d/%m/%Y %X')
+                # get a float value of the new donation
+                new_donation = get_amount_difference(stream['amount_raised'], new_amount_raised)
+                # assign the new, higher value to the stream dictionary
+                stream['amount_raised'] = new_amount_raised
+                # check that the donation amount is not 0.0, encountered this in the past
+                if not new_donation == 0.0:
+                    # round up the donation, because of floating point values going .999999
+                    new_donation = round(new_donation, 2)
+                    print('[!] NEW DONATION DETECTED! {}{} at {}'.format(
+                        stream['donation_currency'],
+                        new_donation,
+                        update_timestamp))
+                # insert the donation into the database
+                insert_donation_into_db(db=database, amount=new_amount_raised, verbose=True)
+                # write the donation amount to a text file for use with OBS via the API
                 # name the file according to the team name
-                write_to_text_file(
-                    file_dir='/home/digitalcat/apache-flask/assets/charity/',  # fill this in according to the linux directory
+                write_and_copy_text_file(
                     file_name=charity.TEAM_NAME,
-                    donation_amount=raised_goal_percentage,
+                    donation_amount=donation_amount_data,
+                    # fill this in according to the linux directory
+                    dest_file_dir='/home/digitalcat/apache-flask/assets/charity/',
                     verbose=True)
+                ################
                 # build the string to post to channels
                 chat_string = 'NEW DONATION OF {}{}! {}{} out of {}{} raised! {}% of the goal has been reached. Visit {} to donate!'.format(
                     charity.DONATION_CURRENCY,
