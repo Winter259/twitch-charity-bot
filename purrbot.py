@@ -83,6 +83,8 @@ def main():
             print('\t{}\t\t{}'.format(
                 stream['team_name'],
                 get_non_default_bot(active_bots, stream['team_name']).return_identity()))
+    stream_pause_tick = int(CHECK_TICK / len(active_streams))
+    print('[+] Global pause tick: {} seconds Bot pause tick: {} seconds'.format(CHECK_TICK, stream_pause_tick))
     continue_value = input('[?] Continue? y/n: ')
     if not continue_value.lower().startswith('y'):
         exit()
@@ -113,22 +115,6 @@ def main():
             chat_string=chat_string,
             pause_time=2
         )
-    """
-    # use to keep track of which index is to be posted
-    prompt_index = 0
-    # strings to store the amount raised for comparison to determine new donations
-    current_amount_raised = ''
-    new_amount_raised = ''
-    print('[+] Retrieving donation amount for the first time')
-    try:
-        raised_goal_percentage = charity.get_donation_amount()
-        current_amount_raised = raised_goal_percentage[0]
-        new_amount_raised = raised_goal_percentage[0]
-    except Exception as e:
-        print('[-] Website scrape error: {}').format(e)
-        input('[?] Click any key to exit')
-        exit(-1)
-    """
     # build extra active stream data from what we already have
     for stream in active_streams:
         try:
@@ -235,7 +221,7 @@ def main():
                         time_left,
                         stream['donation_currency'],
                         stream['amount_raised']))
-
+            pause(initial_prompt='Holding for team {}', amount=stream_pause_tick)
 
 if __name__ == '__main__':
     main()
