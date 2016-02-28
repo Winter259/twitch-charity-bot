@@ -57,7 +57,7 @@ def insert_donation_into_db(db, db_table='', amount=0, verbose=False):
                 print('[-] Donation recording error: {}'.format(e))
 
 
-def write_to_text_file(file_dir=None, file_name='donations', file_format='.txt', donation_amount='', verbose=False):
+def write_and_copy_text_file(file_name='donations', file_format='.txt', donation_amount='', dest_file_dir=None, verbose=False):
     if donation_amount == '':
         if verbose:
             print('[-] No amount passed to be written to the text file')
