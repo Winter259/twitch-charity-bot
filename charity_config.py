@@ -2,6 +2,7 @@
 import yarn
 
 stream_fields = [
+    'active',
     'team_name',
     'streamer_list',
     'prompt_tick',  # Minutes
@@ -18,6 +19,7 @@ active_charity_streams = [
         zip(
             stream_fields,
             [
+                False,
                 'wotsit',
                 [
                     'kateclick',
@@ -37,6 +39,7 @@ active_charity_streams = [
         zip(
             stream_fields,
             [
+                True,
                 'sagArace',
                 [
                     'bubblemapgaminglive',
@@ -45,7 +48,7 @@ active_charity_streams = [
                 5,
                 '£',
                 'https://gameblast16.everydayhero.com/uk/SagARace',
-                'default'
+                'purrbot9000'
             ]
         )
     ),
@@ -54,6 +57,7 @@ active_charity_streams = [
         zip(
             stream_fields,
             [
+                False,
                 'tiiq',
                 [
                     'djtruthsayer',
