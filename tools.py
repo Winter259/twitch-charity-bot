@@ -11,6 +11,7 @@ def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
         print('                                        ', end='\r')  # clear the line completely
 
 
+# TODO: Add parameter for decimal places returned
 # get a float value xy.z from the passed string, used for calculations
 def get_float_from_string(amount=''):
     if amount == '':
@@ -25,6 +26,7 @@ def get_float_from_string(amount=''):
     return round(float(amount_string), 2)
 
 
+# TODO: Rewrite this method, switch the value order and introduce parameter for decimal place count
 def get_amount_difference(old_amount='', new_amount='', test_mode=False):
     if old_amount == '' or new_amount == '':
         print('[-] An amount was not passed to the amount donated method')
@@ -57,15 +59,20 @@ def insert_donation_into_db(db, db_table='', amount=0, verbose=False):
                 print('[-] Donation recording error: {}'.format(e))
 
 
+# TODO: Split into two methods
 def write_and_copy_text_file(file_name='donations', file_format='.txt', donation_amount='', dest_file_dir=None, verbose=False):
     if donation_amount == '':
         if verbose:
             print('[-] No amount passed to be written to the text file')
+            return False
     else:
+        # TODO: Remove this and make sure all values passed are rounded from the bot's side
+        """
         # bad hack to quickly remove the decimals
         donation_amount = [float(amount) for amount in donation_amount]
         donation_amount = [round(amount, 0) for amount in donation_amount]
         donation_amount = [int(amount) for amount in donation_amount]
+        """
         if verbose:
             print('[+] Attempting to write the amount: {} to the text file: {}'.format(
                 donation_amount,
@@ -77,6 +84,7 @@ def write_and_copy_text_file(file_name='donations', file_format='.txt', donation
             print('[+] Write successful')
         except Exception as e:
             print('[-] Unable to write to text file: {}'.format(e))
+            return False
         if dest_file_dir is not None:
             try:
                 print('[+] Attempting to copy to the required file directory')
@@ -86,3 +94,5 @@ def write_and_copy_text_file(file_name='donations', file_format='.txt', donation
                 print('[+] Copy successful')
             except Exception as e:
                 print('[-] Unable to copy text file: {}'.format(e))
+                return False
+        return True
