@@ -19,28 +19,60 @@ class TestFloatFromString(unittest.TestCase):
         self.assertEqual(get_float_from_string('5.34'), 5.34)
 
 
-class TestFileWriteAndCopy(unittest.TestCase):
+class TestFileWrite(unittest.TestCase):
     def test_file_write_no_params(self):
-        state = write_and_copy_text_file(
+        state = write_text_file(
             file_name='test',
             file_format='.txt',
-            donation_amount=''
+            file_lines=None,
+            verbose=True
         )
         self.assertFalse(state)
 
     # TODO: Add tests for directory not existing
     def test_file_write(self):
-        write_and_copy_text_file(
+        # Check that the file exists after writing it
+        write_text_file(
             file_name='test',
             file_format='.txt',
-            donation_amount='test',
-            dest_file_dir=None
+            file_lines='test string only',
+            verbose=True
         )
         self.assertTrue(file_exists('test.txt'))
+        # Check if the one string we passed is written correctly
         with open('test.txt', 'r') as file:
-            file_data = file.readline()
-            print(file_data)
-        self.assertEqual('test test', file_data)
+            file_data = file.readline().strip()
+        self.assertEqual('test string only', file_data)
+        # Pass an empty list and see if it fails as expected
+        state = write_text_file(
+            file_name='test',
+            file_format='.txt',
+            file_lines=[],
+            verbose=True
+        )
+        self.assertFalse(state)
+        # Write one line, but passed as a list
+        write_text_file(
+            file_name='test',
+            file_format='.txt',
+            file_lines=['One line given'],
+            verbose=True
+        )
+        with open('test.txt', 'r') as file:
+            file_data = file.readline().strip()
+        self.assertEqual('One line given', file_data)
+        # write a list of strings
+        test_lines = ['hello', 'my', 'name', 'is', 'Simon']
+        write_text_file(
+            file_name='test',
+            file_format='.txt',
+            file_lines=test_lines,
+            verbose=True
+        )
+        with open('test.txt', 'r') as file:
+            file_data = file.readlines()
+        for line_number in range(len(test_lines)):
+            self.assertEqual(test_lines[line_number], file_data[line_number].strip())
         # Clean up after the test
         remove_file('test.txt')
 

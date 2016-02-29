@@ -59,6 +59,33 @@ def insert_donation_into_db(db, db_table='', amount=0, verbose=False):
                 print('[-] Donation recording error: {}'.format(e))
 
 
+# TODO: Add check for if file exists and offer to force overwrite
+def write_text_file(file_name='default', file_format='.txt', file_lines=None, verbose=False):
+    if file_lines is None:
+        if verbose:
+            print('[-] No data passed to be written to the text file')
+        return False
+    elif not type(file_lines) is list:
+        file_lines = [file_lines]
+    if len(file_lines) == 0:
+        if verbose:
+            print('[-] No data passed to be written to the text file')
+        return False
+    if verbose:
+        print('[+] Writing data to text file: {}'.format(file_name + file_format))
+    try:
+        with open(file_name + file_format, 'w') as file:
+            for line in file_lines:
+                file.write(line + '\n')
+        if verbose:
+            print('[+] Write to {} successful'.format(file_name + file_format))
+    except Exception as e:
+        if verbose:
+            print('[-] Unable to write to file: {}'.format(e))
+        return False
+    return True
+
+
 # TODO: Split into two methods
 def write_and_copy_text_file(file_name='donations', file_format='.txt', donation_amount='', dest_file_dir=None, verbose=False):
     if donation_amount == '':
