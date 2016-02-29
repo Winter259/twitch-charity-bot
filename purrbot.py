@@ -51,8 +51,9 @@ def main():
         verbose=True)
     active_bots.append(purrbot)
     # check if the streams will use any non-default bots
-    active_streams = charity.active_charity_streams
+    active_streams = [stream for stream in charity.active_charity_streams if stream['active']]
     for stream in active_streams:
+        print(stream['bot_name'])
         if not stream['bot_name'] == 'default':
             print('[+] Team {} require bot with ID: {}'.format(stream['team_name'], stream['bot_name']))
             for bot in bot_config.purrbots:
@@ -78,11 +79,11 @@ def main():
         if stream['bot_name'] is 'default':
             print('\t{}\t\t{}'.format(
                 stream['team_name'],
-                active_bots[0].return_identity()))
+                active_bots[0].name))
         else:
             print('\t{}\t\t{}'.format(
                 stream['team_name'],
-                get_non_default_bot(active_bots, stream['team_name']).return_identity()))
+                get_non_default_bot(active_bots, stream['team_name']).name))
     stream_pause_tick = int(CHECK_TICK / len(active_streams))
     print('[+] Global pause tick: {} seconds Bot pause tick: {} seconds'.format(CHECK_TICK, stream_pause_tick))
     continue_value = input('[?] Continue? y/n: ')
@@ -132,12 +133,11 @@ def main():
     # Start the main loop
     while True:
         for stream in active_streams:
-            stream_bot = get_bot(bot_list=active_bots, bot_id=stream['bot_name'])
-            print('[+] {} is on cycle: {} for team: {} and streamers: {}'.format(
+            stream_bot = get_bot(bot_list=active_bots, bot_id=stream['team_name'], )
+            print('[+] {} is on cycle: {} for team: {}'.format(
                 stream_bot.name,
                 stream['cycle_count'],
-                stream['team_name'],
-                stream['streamer_list']))
+                stream['team_name']))
             try:
                 donation_amount_data = charity.get_donation_amount(url=stream['donation_url'])
                 new_amount_raised = donation_amount_data[0]
@@ -162,7 +162,7 @@ def main():
                         new_donation,
                         update_timestamp))
                 # insert the donation into the database
-                insert_donation_into_db(db=database, amount=new_amount_raised, verbose=True)
+                insert_donation_into_db(db=database, db_table=DATABASE_TABLE,amount=new_amount_raised, verbose=True)
                 # write the donation amount to a text file for use with OBS via the API
                 # name the file according to the team name
                 write_and_copy_text_file(
@@ -194,14 +194,24 @@ def main():
                     prompt_string = ''
                     # do a round robin between the chat strings available, according to the prompt index of the stream
                     if stream['prompt_index'] == 0:  # money raised, schedule and donation link
-                        prompt_string = '£{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
+                        prompt_string = '{}{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
+                            stream['donation_currency'],
                             stream['amount_raised'],
                             stream['team_name'],
                             stream['donation_url'])
                     elif stream['prompt_index'] == 1:
-                        prompt_string = 'Watch all the current team {} streamers here: {}'.format(
-                            stream['team_name'],
-                            return_kadgar_link(get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)))
+                        current_streamers = get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)
+                        # if only 1 streamer is online, it doesn't make sense to post a single twitch link
+                        if len(current_streamers) == 1:
+                            prompt_string = '{}{} has been raised by team {} for Gameblast so far! You too can donate at: {}'.format(
+                                stream['donation_currency'],
+                                stream['amount_raised'],
+                                stream['team_name'],
+                                stream['donation_url'])
+                        else:
+                            prompt_string = 'Watch all the current team {} streamers here: {}'.format(
+                                stream['team_name'],
+                                return_kadgar_link(get_online_streamers(streamer_list=stream['streamer_list'], verbose=True)))
                     purrbot.post_in_streamer_channels(
                         streamer_list=get_online_streamers(streamer_list=stream['streamer_list'], verbose=True),
                         chat_string=prompt_string,
@@ -215,13 +225,13 @@ def main():
                     # print how much time to the next prompt
                     cycles_left = int(stream['cycles_for_prompt'] - stream['cycle_count'] + 1)
                     time_left = round((cycles_left / 60) * CHECK_TICK, 1)
-                    print('[+] Team: {}, Last donation at: {}, Next prompt: {} minutes, Amount raised: {}{}, '.format(
+                    print('[+] Team: {}\n[+] Last donation at: {}\n[+] Next prompt: {} minutes\n[+] Amount raised: {}{}, '.format(
                         stream['team_name'],
                         update_timestamp,
                         time_left,
                         stream['donation_currency'],
                         stream['amount_raised']))
-            pause(initial_prompt='Holding for team {}', amount=stream_pause_tick)
+            pause(initial_prompt='Holding for team {}'.format(stream['team_name']), amount=stream_pause_tick)
 
 if __name__ == '__main__':
     main()
