@@ -15,8 +15,9 @@ class TestFloatDifference(unittest.TestCase):
 
 class TestFloatFromString(unittest.TestCase):
     def test_string_from_float(self):
-        self.assertEqual(get_float_from_string(''), '')
-        self.assertEqual(get_float_from_string('5.34'), 5.34)
+        self.assertEqual(get_float_from_string(''), float(0))
+        self.assertEqual(get_float_from_string(amount_string='5.34293', decimal_places=2), 5.34)
+        self.assertNotEqual(get_float_from_string(amount_string='5.34293', decimal_places=4), 5.34)
 
 
 class TestFileWrite(unittest.TestCase):
@@ -25,8 +26,7 @@ class TestFileWrite(unittest.TestCase):
             file_name='test',
             file_format='.txt',
             file_lines=None,
-            verbose=True
-        )
+            verbose=True)
         self.assertFalse(state)
 
     # TODO: Add tests for directory not existing
@@ -36,8 +36,7 @@ class TestFileWrite(unittest.TestCase):
             file_name='test',
             file_format='.txt',
             file_lines='test string only',
-            verbose=True
-        )
+            verbose=True)
         self.assertTrue(file_exists('test.txt'))
         # Check if the one string we passed is written correctly
         with open('test.txt', 'r') as file:
@@ -48,16 +47,14 @@ class TestFileWrite(unittest.TestCase):
             file_name='test',
             file_format='.txt',
             file_lines=[],
-            verbose=True
-        )
+            verbose=True)
         self.assertFalse(state)
         # Write one line, but passed as a list
         write_text_file(
             file_name='test',
             file_format='.txt',
             file_lines=['One line given'],
-            verbose=True
-        )
+            verbose=True)
         with open('test.txt', 'r') as file:
             file_data = file.readline().strip()
         self.assertEqual('One line given', file_data)
@@ -67,8 +64,7 @@ class TestFileWrite(unittest.TestCase):
             file_name='test',
             file_format='.txt',
             file_lines=test_lines,
-            verbose=True
-        )
+            verbose=True)
         # Read the lines and compare with the lines written
         with open('test.txt', 'r') as file:
             file_data = file.readlines()

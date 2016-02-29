@@ -10,19 +10,19 @@ def pause(initial_prompt='', amount=5, clear_pause_prompt=True):
         print('                                        ', end='\r')  # clear the line completely
 
 
-# TODO: Add parameter for decimal places returned
 # get a float value xy.z from the passed string, used for calculations
-def get_float_from_string(amount=''):
-    if amount == '':
-        print('[-] Empty string passed to the decimal from string converter')
-        return ''
-    amount_string = ''
-    for letter in amount:
+def get_float_from_string(amount_string='', decimal_places=2, verbose=False):
+    if amount_string == '':
+        if verbose:
+            print('[-] Empty string passed to the decimal from string converter')
+        return round(float(0), decimal_places)
+    return_string = ''
+    for letter in amount_string:
         if letter in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-            amount_string += letter
+            return_string += letter
         if letter == '.':
-            amount_string += letter
-    return round(float(amount_string), 2)
+            return_string += letter
+    return round(float(return_string), decimal_places)
 
 
 # TODO: Rewrite this method, switch the value order and introduce parameter for decimal place count
