@@ -77,10 +77,12 @@ def write_and_copy_text_file(file_name='donations', file_format='.txt', donation
             print('[+] Write successful')
         except Exception as e:
             print('[-] Unable to write to text file: {}'.format(e))
-        if file_dir is not None:
+        if dest_file_dir is not None:
             try:
                 print('[+] Attempting to copy to the required file directory')
-                copy_file(src=file_name + file_format, dst='/home/charitybot/apache-flask/assets/charity/' + file_name + file_format)
+                src = file_name + file_format
+                dst = dest_file_dir + file_name + file_format
+                copy_file(src=src, dst=dst)
                 print('[+] Copy successful')
             except Exception as e:
                 print('[-] Unable to copy text file: {}'.format(e))
