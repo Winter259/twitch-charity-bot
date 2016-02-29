@@ -78,7 +78,7 @@ def get_online_streamers(streamer_list=None, full_verbose=False, verbose=True):
 
 
 class Pytwitch:
-    def __init__(self, name='', token='', channel=None, read_chat=False, identifier=None, verbose=False):
+    def __init__(self, name='', token='', channel=None, read_chat=False, identifier='default', verbose=False):
         self.name = name
         self.token = token
         self.channel = channel
@@ -86,6 +86,7 @@ class Pytwitch:
         self.verbose = verbose
         self.identifier = identifier
         self.connection = socket.socket()
+        self.cycles = 0
         if self.read_chat:
             self.connect(channel)
             if self.verbose:
@@ -93,10 +94,13 @@ class Pytwitch:
             self.print_response(INITIAL_BUFFER_SIZE)
 
     def return_identity(self):
-        if self.identifier is not None:
-            return self.identifier
-        else:
-            return 'ID NOT SPECIFIED'
+        return self.identifier
+
+    def increment_cycles(self):
+        self.cycles += 1
+
+    def reset_cycles(self):
+        self.cycles = 0
 
     def connect(self, channel=''):
         if len(channel) == 0:
