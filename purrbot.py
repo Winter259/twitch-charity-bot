@@ -4,6 +4,7 @@ from pysqlite import Pysqlite
 from pytwitch import Pytwitch, return_kadgar_link, get_online_streamers
 from time import strftime
 from tools import *
+from shutil import copy as copy_file
 
 VERSION = '0.3'
 DATABASE_NAME = 'charity'
@@ -163,14 +164,24 @@ def main():
                         update_timestamp))
                 # insert the donation into the database
                 insert_donation_into_db(db=database, db_table=DATABASE_TABLE,amount=new_amount_raised, verbose=True)
-                # write the donation amount to a text file for use with OBS via the API
-                # name the file according to the team name
-                write_and_copy_text_file(
+                # build the string to place in the text file in the form: amount goal percentage
+                text_file_string = '{} {} {}'.format(
+                    donation_amount_data[0],
+                    donation_amount_data[1],
+                    donation_amount_data[2])
+                # Write the donation data to the text file
+                write_text_file(
                     file_name=stream['team_name'],
-                    donation_amount=donation_amount_data,
-                    # fill this in according to the linux directory
-                    dest_file_dir='/home/digitalcat/apache-flask/assets/charity/',
+                    file_lines=text_file_string,
                     verbose=True)
+                # Copy the file to the API directory
+                try:
+                    source_file = stream['team_name'] + '.txt'
+                    destination = '/home/digitalcat/apache-flask/assets/charity/'
+                    copy_file(src=source_file, dst=destination)
+                    print('File successfully copied')
+                except Exception as e:
+                    print('[-] Copy failed: {}'.format(e))
                 # build the string to post to channels
                 chat_string = 'NEW DONATION OF {}{}! {}{} out of {}{} raised! {}% of the goal has been reached. Visit {} to donate!'.format(
                     stream['donation_currency'],

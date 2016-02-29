@@ -1,4 +1,3 @@
-from shutil import copy2 as copy_file
 from time import sleep
 
 
@@ -84,42 +83,3 @@ def write_text_file(file_name='default', file_format='.txt', file_lines=None, ve
             print('[-] Unable to write to file: {}'.format(e))
         return False
     return True
-
-
-# TODO: Split into two methods
-def write_and_copy_text_file(file_name='donations', file_format='.txt', donation_amount='', dest_file_dir=None, verbose=False):
-    if donation_amount == '':
-        if verbose:
-            print('[-] No amount passed to be written to the text file')
-            return False
-    else:
-        # TODO: Remove this and make sure all values passed are rounded from the bot's side
-        """
-        # bad hack to quickly remove the decimals
-        donation_amount = [float(amount) for amount in donation_amount]
-        donation_amount = [round(amount, 0) for amount in donation_amount]
-        donation_amount = [int(amount) for amount in donation_amount]
-        """
-        if verbose:
-            print('[+] Attempting to write the amount: {} to the text file: {}'.format(
-                donation_amount,
-                file_name + file_format))
-        try:
-            with open(file_name + file_format, 'w') as file:
-                file.write('{} {} {}'.format(donation_amount[0], donation_amount[1], donation_amount[2]))
-                file.close()
-            print('[+] Write successful')
-        except Exception as e:
-            print('[-] Unable to write to text file: {}'.format(e))
-            return False
-        if dest_file_dir is not None:
-            try:
-                print('[+] Attempting to copy to the required file directory')
-                src = file_name + file_format
-                dst = dest_file_dir + file_name + file_format
-                copy_file(src=src, dst=dst)
-                print('[+] Copy successful')
-            except Exception as e:
-                print('[-] Unable to copy text file: {}'.format(e))
-                return False
-        return True

@@ -69,6 +69,7 @@ class TestFileWrite(unittest.TestCase):
             file_lines=test_lines,
             verbose=True
         )
+        # Read the lines and compare with the lines written
         with open('test.txt', 'r') as file:
             file_data = file.readlines()
         for line_number in range(len(test_lines)):
