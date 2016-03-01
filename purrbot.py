@@ -54,7 +54,6 @@ def main():
     # check if the streams will use any non-default bots
     active_streams = [stream for stream in charity.active_charity_streams if stream['active']]
     for stream in active_streams:
-        print(stream['bot_name'])
         if not stream['bot_name'] == 'default':
             print('[+] Team {} require bot with ID: {}'.format(stream['team_name'], stream['bot_name']))
             for bot in bot_config.purrbots:
