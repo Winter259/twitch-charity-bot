@@ -12,7 +12,6 @@ stream_fields = [
 ]
 
 # TODO: import these from a txt or csv file rather than hard coding them alongside other values
-# TODO, write test to check that these actually exist
 active_charity_streams = [
     # TEAM WOTSIT
     dict(
