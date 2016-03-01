@@ -1,12 +1,11 @@
 import unittest
+import charity_config
 from os.path import isfile as file_exists
 from os import remove as remove_file
 from tools import *
 
 
-# Test the tools file. TODO: Refactor the tools file and put its tests in its own file
-
-# TODO: Rewrite this test depending on the method rewrite
+# Test the tools file. TODO: Refactor the tools file and (maybe) put its tests in its own file
 class TestFloatDifference(unittest.TestCase):
     def test_float_difference(self):
         self.assertEqual(4.2, round(get_amount_difference('0.30', '4.50'), 1))
@@ -74,7 +73,26 @@ class TestFileWrite(unittest.TestCase):
         remove_file('test.txt')
 
 
+# test the charity config
+class TestCharityConfig(unittest.TestCase):
+    def test_config_exists(self):
+        self.assertTrue(file_exists('charity_config.py'))
+
+    def test_stream_data_import(self):
+        self.assertTrue(charity_config.active_charity_streams)
+        self.assertTrue(len(charity_config.active_charity_streams) > 0)
+
+    def test_donation_scrape(self):
+        failure_cases = [
+            'ERROR: NO URL GIVEN',
+            'ERROR: COULD NOT SCRAPE DONATION_AMOUNT'
+        ]
+        return_state = charity_config.get_donation_amount(url='https://gameblast16.everydayhero.com/uk/tiiq', verbose=False)
+        self.assertFalse(return_state in failure_cases)
+
+
 """
+
 class MyTestCase(unittest.TestCase):
     def test_something(self):
         self.assertEqual(True, False)
