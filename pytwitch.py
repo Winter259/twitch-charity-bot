@@ -1,5 +1,5 @@
 import socket
-import cfg
+import bot_config
 from time import sleep
 from requests import get as req_get
 
@@ -78,18 +78,29 @@ def get_online_streamers(streamer_list=None, full_verbose=False, verbose=True):
 
 
 class Pytwitch:
-    def __init__(self, name='', token='', channel=None, read_chat=False, verbose=False):
+    def __init__(self, name='', token='', channel=None, read_chat=False, identifier='default', verbose=False):
         self.name = name
         self.token = token
         self.channel = channel
-        self.verbose = verbose
         self.read_chat = read_chat
+        self.verbose = verbose
+        self.identifier = identifier
         self.connection = socket.socket()
+        self.cycles = 0
         if self.read_chat:
             self.connect(channel)
             if self.verbose:
                 print('[+] Initial buffer content:')
             self.print_response(INITIAL_BUFFER_SIZE)
+
+    def return_identity(self):
+        return self.identifier
+
+    def increment_cycles(self):
+        self.cycles += 1
+
+    def reset_cycles(self):
+        self.cycles = 0
 
     def connect(self, channel=''):
         if len(channel) == 0:
@@ -170,9 +181,12 @@ class Pytwitch:
             pause(initial_prompt='Holding between channels', amount=pause_time)
 
 if __name__ == '__main__':
-    bot = Pytwitch(name=cfg.NICK, token=cfg.PASS, channel=cfg.CHAN, verbose=True)
+    bot_details = bot_config.purrbots[0]
+    bot = Pytwitch(name=bot_details['NICK'], token=bot_details['TOKEN'], verbose=True)
     while True:
-        bot.connect('#kateclick')
-        bot.post_in_channel('#kateclick', 'test string')
+        bot.connect('#purrcat259')
+        bot.post_in_channel('#purrcat259', 'test string')
+        sleep(2)
+        bot.close_connection()
         sleep(5)
 
